@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (MiKTeX 20.11) (preloaded format=pdflatex 2021.3.6)  15 JUN 2021 17:07
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (MiKTeX 20.11) (preloaded format=pdflatex 2021.3.6)  17 JUN 2021 20:02
 entering extended mode
 **./ProblemStatement_LObserverResidualBounds.tex
 (ProblemStatement_LObserverResidualBounds.tex
@@ -517,13 +517,13 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
 85.
 )
 \c@lstlisting=\count306
-LaTeX Font Info:    Trying to load font information for U+msa on input line 30.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 34.
 
 
 (C:\Users\Jonas\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 30.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 34.
 
 
 (C:\Users\Jonas\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd
@@ -532,32 +532,32 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 [1
 
 {C:/Users/Jonas/AppData/Local/MiKTeX/pdftex/config/pdftex.map}]
-Underfull \hbox (badness 10000) in paragraph at lines 87--88
+Underfull \hbox (badness 10000) in paragraph at lines 89--90
 
  []
 
 [2] [3]
 
-LaTeX Warning: Citation `beelen2017joint' on page 4 undefined on input line 198
+LaTeX Warning: Citation `beelen2017joint' on page 4 undefined on input line 210
 .
 
 
-LaTeX Warning: Citation `ORJUELA2019295' on page 4 undefined on input line 198.
+LaTeX Warning: Citation `ORJUELA2019295' on page 4 undefined on input line 210.
 
 
 
 LaTeX Warning: Citation `orjuela2013nonlinear' on page 4 undefined on input lin
-e 198.
+e 210.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 197--199
+Underfull \hbox (badness 10000) in paragraph at lines 209--211
 
  []
 
 [4
 
 ]
-Underfull \hbox (badness 10000) in paragraph at lines 251--264
+Underfull \hbox (badness 10000) in paragraph at lines 263--276
 
  []
 
@@ -567,12 +567,12 @@ LaTeX Warning: There were undefined references.
 
 Package rerunfilecheck Info: File `ProblemStatement_LObserverResidualBounds.out
 ' has not changed.
-(rerunfilecheck)             Checksum: 773BA51F2B0C1CDA32229D3CD2D106F1;2495.
+(rerunfilecheck)             Checksum: DEDB4CBAC57BB3C4DED7B29B7358460D;2714.
  ) 
 Here is how much of TeX's memory you used:
  12975 strings out of 479337
- 190468 string characters out of 2857148
- 516021 words of memory out of 3000000
+ 190454 string characters out of 2857148
+ 514967 words of memory out of 3000000
  30200 multiletter control sequences out of 15000+200000
  414363 words of font info for 68 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -597,10 +597,10 @@ s/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/Jonas/AppData/Loca
 l/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/Jonas/AppD
 ata/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/Jo
 nas/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb>
-Output written on ProblemStatement_LObserverResidualBounds.pdf (5 pages, 214149
+Output written on ProblemStatement_LObserverResidualBounds.pdf (5 pages, 216239
  bytes).
 PDF statistics:
- 200 PDF objects out of 1000 (max. 8388607)
+ 201 PDF objects out of 1000 (max. 8388607)
  46 named destinations out of 1000 (max. 500000)
- 105 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 113 words of extra memory for PDF output out of 10000 (max. 10000000)
 
