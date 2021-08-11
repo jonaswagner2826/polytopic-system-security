@@ -6,11 +6,11 @@ clear
 close all
 
 % Sim Parameters
-N = 10;
-Alpha_real = [0.125, 0.25, 0.375, 0.25];
-Alpha_hat = [0.25, 0.375, 0.25, 0.125];
+N = 100;
 x_0 = [-0.25; 0.25];
 x_hat_0 = x_0;
+Alphas = [1,0,0,0; 0.75, 0, 0, 0.25; 0.25, 0.375, 0.25, 0.25; 0.125, 0.25, 0.25, 0.25];
+Alpha_hat = [1,0,0,0];%[0.25, 0.25, 0.25, 0.25];
 
 % Toy System Def
 A(:,:,1) = [-0.80, 0.25; 0.25,-0.30];
@@ -28,6 +28,18 @@ m = size(A,3);
 p = size(B,2);
 q = size(C,1);
 
+% Parameter Definition
+ALPHA = zeros(m,N);
+j = 1;
+for k = 1:N
+    ALPHA(:,k) = Alphas(j,:);
+    if mod(k*size(Alphas,1),N) == 0
+        j = j + 1;
+    end
+end
+Alpha_real = ALPHA(:,1);
+
+
 % Polytopic Calculations
 A_real = zeros(n);
 A_hat = zeros(n);
@@ -36,13 +48,39 @@ for i = 1:m
     A_hat = A_hat + Alpha_hat(i) * A(:,:,i);
 end
 
+
+% CVX Designing
+
 % Control Design: u = K * x_hat
-p_ctrl = [0.5, 0.2];
-K = -place(A_hat, B, p_ctrl); % Arbritrarily designed...
+tol = 1e-6;
+cvx_clear
+cvx_begin sdp
+    variable Q(p,n)
+    variable P(n,n) symmetric
+    maximize(trace(P))
+    subject to
+        P >= 0;
+        for i = 1:m
+            [P, (A(:,:,i)* P + B * Q)';
+            (A(:,:,i) * P + B * Q) , P] >= 0;
+        end
+cvx_end
+
+K = Q * inv(P)
+
 
 % Observer Design: x_hat = A_hat * x_hat + B * u + L * (y - y_hat)
-p_obsv = [-0.5, 0.5];
-L = place(A_hat', C', p_obsv).';
+cvx_begin sdp
+    variable X(n,q)
+    variable Q(n,n) symmetric
+    maximize(trace(Q))
+    subject to
+        Q >= 0;
+        [Q, (Q*A(:,:,i) + X*C)';
+         Q*A(:,:,i) + X*C, Q] >= 0;
+cvx_end
+
+L = inv(Q) * X
 
 % Sim Setup
 X = zeros(1,n,N);
@@ -53,10 +91,18 @@ Y = zeros(1,q,N);
 Y_hat = zeros(1,q,N);
 R = zeros(1,q,N);
 r = 0;
+
 U = zeros(1,p,N);
-u = K * x_hat;
+u_0 = [1];
+f = 1/(N/size(Alphas,1));
+% U = reshape(u_0 * 0.5 * (sin(2*pi*f*(1:N))+1), size(u_0,1),p,[]);
+U_ref = reshape(u_0 * 0.5 * (square(2*pi*f*(1:N)) + 1), 1,p,[]);
+% u = K * x_hat;
 E = zeros(1,n,N);
 e = x - x_hat;
+u = 0;%U_ref(:,1);
+Alpha_real = ALPHA(:,1);
+j = 0;
 
 % Simulation
 for k = 1:N
@@ -74,8 +120,20 @@ for k = 1:N
     U(:,:,k) = u;
     E(:,:,k) = e;
     
+    %switching alphas
+    if ALPHA(:,k) ~= Alpha_real
+        Alpha_real = ALPHA(:,k);
+        A_real = zeros(n);
+        for i = 1:m
+            A_real = A_real + Alpha_real(i) * A(:,:,i);
+        end
+%         x = x_0;
+    end
+    
     % Time-Update
-    u = K * x_hat;
+%     u = 0;
+%     u = U_ref(:,k) + K * x_hat;
+    u = K * (x_hat + x_0 * U_ref(:,k));
     x = A_real * x + B * u;
     x_hat = A_hat * x_hat + B * u + L * r;
     e = x - x_hat;
@@ -83,29 +141,61 @@ end
 
 
 % Ploting
+X_real = reshape(X, n, [])';
+X_est = reshape(X_hat, n, [])';
 X1 = reshape([X(:,1,:); X_hat(:,1,:)],2,[])';
 X2 = reshape([X(:,2,:); X_hat(:,2,:)],2,[])';
 Y1 = reshape([Y(:,1,:); Y_hat(:,1,:)],2,[])';
-U = reshape(U, p, []);
-E = reshape(E,n,[]);
-R = reshape(R,q,[]);
+U = reshape(U, p, [])';
+E = reshape(E,n,[])';
+R = reshape(R,q,[])';
+Alpha = reshape(ALPHA, m, [])';
 
+
+% 4-plots
+% figure
+% subplot(2,2,1)
+% plot(X1)
+% hold on
+% plot(X2
+% title('States and Estimates')
+% 
+% subplot(2,2,2)
+% plot(U)
+% title('Inputs');
+% 
+% subplot(2,2,3)
+% plot(reshape(E,2,[])')
+% title('Error')
+% 
+% subplot(2,2,4)
+% plot(R)
+% title('Residual')
+
+% 6-plots
 figure
-subplot(2,2,1)
-plot(X1)
-hold on
-plot(X2)
-title('States and Estimates')
+subplot(3,2,1)
+plot(X_real)
+title('States')
 
-subplot(2,2,2)
-plot(U)
-title('Inputs');
+subplot(3,2,3)
+plot(X_est)
+title('Estimates')
 
-subplot(2,2,3)
-plot(reshape(E,2,[])')
+subplot(3,2,5)
+plot(E)
 title('Error')
 
-subplot(2,2,4)
+subplot(3,2,2)
+plot(Alpha)
+title('Alpha')
+legend('x1','x2','x3','x4')
+ylim([-0.1, 1.1])
+
+subplot(3,2,4)
+plot(U)
+title('Input')
+
+subplot(3,2,6)
 plot(R)
 title('Residual')
-
