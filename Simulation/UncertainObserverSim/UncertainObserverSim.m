@@ -13,7 +13,7 @@ x_0 = x_0_mag * [cos(x_0_theta); sin(x_0_theta)];
 x_hat_0 = x_0;
 
 % Optional Tests
-testL = true;
+testL = false;
 
 % % Toy System Def
 % A(:,:,1) = [-0.80, 0.25; 0.25,-0.30];
@@ -193,26 +193,28 @@ plot(X(:,1));
 hold on
 plot(X_hat(:,1));
 title('State and Estimate (X1)')
+legend('Actual', 'Estimate')
 
 subplot(2,3,4)
 plot(X(:,2));
 hold on
 plot(X_hat(:,2));
 title('State and Estimate (X2)')
+legend('Actual', 'Estimate')
 
 subplot(2,3,2)
 plot(E(:,1))
 hold on
 plot(E_calc(:,1))
 title('Error (X1)')
-legend('actual','calc')
+legend('Actual','Calculated')
 
 subplot(2,3,5)
 plot(E(:,2))
 hold on
 plot(E_calc(:,2))
 title('Error (X2)')
-legend('actual','calc')
+legend('Actual','Calculated')
 
 subplot(2,3,3)
 plot(E_norm)
@@ -220,12 +222,21 @@ hold on
 plot(E_norm_calc)
 plot(E_norm_bound)
 title('Error Norm')
-legend('actual','calc iterative','calc bound')
-ylim([0, 2 * max(E_norm)])
+legend('Actual','Sum of Norms','Closed-Form Bound')
+% ylim([0, 2 * max(E_norm)])
 
 subplot(2,3,6)
 plot((E_norm - E_norm_calc)./E_norm)
 hold on
 plot((E_norm - E_norm_bound)./E_norm)
-ylim([5 * min((E_norm - E_norm_calc)./E_norm),0])
+% ylim([5 * min((E_norm - E_norm_calc)./E_norm),0])
 title('Error Norm Calc & Bound % Error')
+legend('Sum of Norms Error','Closed-Form Bound Error')
+
+close
+
+%additional figures
+figure
+plot(((E-E_calc)./E)*100)
+title('% Error of Actual vs Calculated Error')
+legend('X_1', 'X_2')
