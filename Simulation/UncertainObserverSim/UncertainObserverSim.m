@@ -81,7 +81,7 @@ cvx_begin sdp
     variable X(n,q)
     variable Q(n,n) symmetric
     tol = 1e-6;
-    maximize(trace(Q))
+%     minimize(trace(Q))
     subject to
         for i = 1:m
             Q >= tol*eye(n);
@@ -116,6 +116,7 @@ Y = zeros(N,q);
 
 E = zeros(N,n);
 E_calc = zeros(N,n);
+E_calc_2 = zeros(N,n);
 E_norm = zeros(N,1);
 E_norm_calc = zeros(N,1);
 E_norm_bound = zeros(N,1);
@@ -124,18 +125,23 @@ E_norm_bound = zeros(N,1);
 x = x_0;
 x_hat = x_hat_0;
 e = x - x_hat;
+e_calc_2 = x_0 - x_hat_0;
 
 % Simulation
 for k = 1:N
     % Control
     u = 0; % No Input
     
+    % Error Calc attempt (recursive)
+%     e_calc_2 = Delta_A * x + (A_hat - L*C) * e_calc_2;
+    e_calc_2 = Delta_A * x_hat + (Delta_A + A_hat - L*C) * e_calc_2;
+    E_calc_2(k,:) = e_calc_2;
+    
     % Time Update
     x = A_real * x + B * u;
     y = C * x + D * u;
     x_hat = A_hat * x_hat + B * u + L * (y - C * x_hat);
     e = x - x_hat;
-    
     
     % Save Data
     X(k,:) = x;
@@ -150,9 +156,12 @@ for k = 1:N
         e_calc = e_calc + (A_hat - L * C)^(i) * Delta_A * A_real^(k - 1 - i) * x_0;
     end
     E_calc(k,:) = e_calc;
+    
+    
+    
 
     % Error Norm
-    E_norm(k,1) = norm(x - x_hat);  
+    E_norm(k,1) = norm(x - x_hat);
     
     % Error Norm Calc
     e_norm_calc = 0;
@@ -206,15 +215,17 @@ subplot(2,3,2)
 plot(E(:,1))
 hold on
 plot(E_calc(:,1))
+plot(E_calc_2(:,1))
 title('Error (X1)')
-legend('Actual','Calculated')
+legend('Actual','Calculated','calc2')
 
 subplot(2,3,5)
 plot(E(:,2))
 hold on
 plot(E_calc(:,2))
+plot(E_calc_2(:,2))
 title('Error (X2)')
-legend('Actual','Calculated')
+legend('Actual','Calculated','calc2')
 
 subplot(2,3,3)
 plot(E_norm)
@@ -233,10 +244,17 @@ plot((E_norm - E_norm_bound)./E_norm)
 title('Error Norm Calc & Bound % Error')
 legend('Sum of Norms Error','Closed-Form Bound Error')
 
-close
+% close
 
 %additional figures
 figure
+subplot(2,1,1)
 plot(((E-E_calc)./E)*100)
 title('% Error of Actual vs Calculated Error')
+legend('X_1', 'X_2')
+
+
+subplot(2,1,2)
+plot(((E-E_calc_2)./E)*100)
+title('% Error of Actual vs Calculated Error 2')
 legend('X_1', 'X_2')
