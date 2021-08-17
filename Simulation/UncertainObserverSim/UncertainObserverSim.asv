@@ -11,11 +11,9 @@ x_0_mag = 1;
 x_0_theta = pi/4;
 x_0 = x_0_mag * [cos(x_0_theta); sin(x_0_theta)];
 x_hat_0 = x_0;
-Alphas = eye(4);
 
-% calc1 = false;
-% calc2 = true;
-
+% Optional Tests
+testL = true;
 
 % % Toy System Def
 % A(:,:,1) = [-0.80, 0.25; 0.25,-0.30];
@@ -94,18 +92,21 @@ cvx_end
 
 L = inv(Q) * X
 
-% % Testing L
-% for i = 1:m
-%     A(:,:,i)
-%     A_LC = A(:,:,i) - L * C
-%     eig_A_LC = eig(A_LC)
-% end
-% A_real
-% A_LC = A_real - L*C
-% eig_A_LC = eig(A_LC)
-% A_hat
-% A_LC = A_hat - L*C
-% eig_A_LC = eig(A_LC)
+% Testing L
+if testL
+    disp('Testing L Design')
+    for i = 1:m
+        A(:,:,i)
+        A_LC = A(:,:,i) - L * C
+        eig_A_LC = eig(A_LC)
+    end
+    A_real
+    A_LC = A_real - L*C
+    eig_A_LC = eig(A_LC)
+    A_hat
+    A_LC = A_hat - L*C
+    eig_A_LC = eig(A_LC)
+end
 
 % Sim Setup
 X = zeros(N,n);
@@ -117,6 +118,7 @@ E = zeros(N,n);
 E_calc = zeros(N,n);
 E_norm = zeros(N,1);
 E_norm_calc = zeros(N,1);
+E_norm_bound = zeros(N,1);
 
 % Inital setup (k=0)
 x = x_0;
@@ -142,237 +144,86 @@ for k = 1:N
     Y(k,:) = y;
     E(k,:) = e;
     
-%     % Error Calc Estimate
-%     e_calc = x_0 - x_hat_0;
-%     for i = 0:(k-1)
-%         e_calc = e_calc + (A_hat - L * C)^(i) * Delta_A * A_real^(k - i) * x_0;
-%     end
-% %     e_calc = e_calc + (A_hat - L * C)^k * x_0;
-%     E_calc(k,:) = e_calc;
+    % Error Calc Estimate
+    e_calc = x_0 - x_hat_0;
+    for i = 0:(k-1)
+        e_calc = e_calc + (A_hat - L * C)^(i) * Delta_A * A_real^(k - 1 - i) * x_0;
+    end
+    E_calc(k,:) = e_calc;
     
-    % New error calc attempt
-    x_hat_calc = x_hat_0;
-    x_hat_calc =  L*C*A^k *x_0;
-    for i = 1:(k-1)
-        (A_hat - L*C)^i * (L*C)^(k-1-i
-    
-        
-    
-%     % Error Norm
-%     E_norm(k,1) = norm(x - x_hat);  
-%     
-%     %Error Norm Calc
-%     e_norm_calc = 0;
-%     for i = 0:k
-%         if calc1
-%             e_norm_calc = e_norm_calc + norm((A_hat - L * C)^(i) * Delta_A * A_real^(k - i)) * norm(x_0);
-%         elseif calc2
-%             e_norm_calc = e_norm_calc + (norm((A_hat - L * C))^(i) * norm(Delta_A) * norm(A_real)^(k - i)) * norm(x_0);
+if false
+%     % X_hat Based Calc:
+%     x_hat_calc = x_hat_0;
+%     x_hat_calc =  L*C*A_real^k *x_0;
+%     if k > 1
+%         for i = 1:(k-1)
+%             x_hat_calc = (A_hat - L*C)^i * L*C*(A_real)^(k-1-i) * x_0;
 %         end
 %     end
-%     E_norm_calc(k,:) = e_norm_calc;
+%     x_hat_calc = (A_hat - L*C)^k * x_0;
+%     
+%     e_calc = A_real^k * x_0 - x_hat_calc;
+%     E_calc(k,:) = e_calc;
+end
+
+    % Error Norm
+    E_norm(k,1) = norm(x - x_hat);  
+    
+    % Error Norm Calc
+    e_norm_calc = 0;
+    for i = 0:(k-1)
+        e_norm_calc = e_norm_calc + norm((A_hat - L * C)^(i) * Delta_A * A_real^(k -1 - i)) * norm(x_0);
+    end
+    E_norm_calc(k,:) = e_norm_calc;
+    
+    % Error Norm Bound
+    E_norm_bound(k,:) = norm(Delta_A) * norm(x_0) * ...
+        (norm(A_hat - L*C)^k - norm(A_real)^k)/(norm(A_hat - L*C) - norm(A_real));
 end
 
 
 % Ploting
-figure
+figure('Position', [0,0,1500,800])
 sgtitle(num2str(x_0))
 
-subplot(2,2,1)
+subplot(2,3,1)
 plot(X(:,1));
 hold on
 plot(X_hat(:,1));
 title('State and Estimate (X1)')
 
-subplot(2,2,3)
+subplot(2,3,4)
 plot(X(:,2));
 hold on
 plot(X_hat(:,2));
 title('State and Estimate (X2)')
 
-subplot(2,2,2)
+subplot(2,3,2)
 plot(E(:,1))
 hold on
 plot(E_calc(:,1))
 title('Error (X1)')
 legend('actual','calc')
-% plot(E_norm)
-% hold on
-% plot(E_norm_calc)
-% if calc1
-%     title('Error Norm Calc 1')
-% elseif calc2
-%     title('Error Norm Calc 2')
-% end
-% % title('Error Norm')
-% legend('actual','calc')
 
-subplot(2,2,4)
+subplot(2,3,5)
 plot(E(:,2))
 hold on
 plot(E_calc(:,2))
 title('Error (X2)')
 legend('actual','calc')
-% plot((E_norm - E_norm_calc)./E_norm)
-% title('Error Norm Calc % Error')
 
+subplot(2,3,3)
+plot(E_norm)
+hold on
+plot(E_norm_calc)
+plot(E_norm_bound)
+title('Error Norm')
+legend('actual','calc iterative','calc bound')
+ylim([0, 2 * max(E_norm)])
 
-
-% % Sim Setup
-% X = zeros(1,n,N);
-% X_hat = zeros(1,n,N);
-% x = x_0;
-% x_hat = x_hat_0;
-% Y = zeros(1,q,N);
-% Y_hat = zeros(1,q,N);
-% R = zeros(1,q,N);
-% r = 0;
-% 
-% U = zeros(1,p,N);
-% u_0 = [0];
-% f = 1/(N/size(Alphas,1));
-% % U = reshape(u_0 * 0.5 * (sin(2*pi*f*(1:N))+1), size(u_0,1),p,[]);
-% U_ref = reshape(u_0 * 0.5 * (square(2*pi*f*(1:N)) + 1), 1,p,[]);
-% % u = K * x_hat;
-% E = zeros(1,n,N);
-% e = x - x_hat;
-% u = 0;%U_ref(:,1);
-% % Alpha_real = ALPHA(:,1);
-% j = 0;
-% E_star = zeros(1,N);
-% E_star_rec = zeros(2,N);
-% e_star_rec = e;
-% 
-% % Simulation
-% for k = 1:N
-%     % Measurment
-%     y = C * x + D * u;
-%     y_hat = C * x_hat + D * u;
-%     r = y - y_hat;
-%     
-%     % Saving for t = k
-%     X(:,:,k) = x;
-%     X_hat(:,:,k) = x_hat;
-%     Y(:,:,k) = y;
-%     Y_hat(:,:,k) = y_hat;
-%     R(:,:,k) = r;(
-%     U(:,:,k) = u;
-%     E(:,:,k) = e;
-%     E_star(:,k) = norm(Delta_A) * norm(x_0) * ...
-%         ((norm(A_hat - L * C))^k - (norm(A_hat + Delta_A))^k) /...
-%         ((norm(A_hat - L * C)) - (norm(A_hat + Delta_A)));
-%     E_star_rec(:,k) = e_star_rec;
-% %     %switching alphas
-% %     if ALPHA(:,k) ~= Alpha_real
-% %         Alpha_real = ALPHA(:,k);
-% %         A_real = zeros(n);
-% %         for i = 1:m
-% %             A_real = A_real + Alpha_real(i) * A(:,:,i);
-% %         end
-% % %         x = x_0;
-% %     end
-%     
-%     % Time-Update
-%     u = 0;
-% %     u = U_ref(:,k) + K * x_hat;
-% %     u = K * (x_hat + x_0 * U_ref(:,k));
-%     x = A_real * x + B * u;
-%     e = Delta_A * x + (A_hat + L * C) * e;
-% %     x_hat = A_hat * x_hat + B * u + L * r;
-% %     e = x - x_hat;
-%     x_hat = x - e;
-%     
-%     %this asssumes that norm(x_0) = 1
-%     e_star_rec = e_star_rec + ((A_hat - L*C)^(k-1+1) * Delta_A * (A_hat + Delta_A)^(N-k+1))*x_0;
-%     
-% end
-% 
-% 
-% % Ploting
-% X_real = reshape(X, n, [])';
-% X_est = reshape(X_hat, n, [])';
-% X1 = reshape([X(:,1,:); X_hat(:,1,:)],2,[])';
-% X2 = reshape([X(:,2,:); X_hat(:,2,:)],2,[])';
-% Y1 = reshape([Y(:,1,:); Y_hat(:,1,:)],2,[])';
-% U = reshape(U, p, [])';
-% E = reshape(E,n,[])';
-% E_star_rec = reshape(E_star_rec,n,[])';
-% R = reshape(R,q,[])';
-% % Alpha = reshape(ALPHA, m, [])';
-% 
-% 
-% % Unforced Plot Comparisson
-% figure
-% sgtitle(num2str(Delta_A))
-% 
-% subplot(2,2,1)
-% plot(X1)
-% title('X1 and X1_hat')
-% 
-% subplot(2,2,3)
-% plot(X2)
-% title('X2 and x2_hat')
-% 
-% subplot(2,2,2)
-% plot(E(:,1,:))
-% hold on
-% % plot(E_star)
-% plot(E_star_rec(:,1,:))
-% title('Error Norm')
-% % 
-% % subplot(2,2,4)
-% % plot(vecnorm(R,2,2))
-% % hold on
-% % % plot(norm(C) * E_star)
-% % plot(norm(C) * E_star_rec)
-% % title('Residual Norm')
-% 
-% 
-% 
-% % 4-plots
-% % figure
-% % subplot(2,2,1)
-% % plot(X1)
-% % hold on
-% % plot(X2
-% % title('States and Estimates')
-% % 
-% % subplot(2,2,2)
-% % plot(U)
-% % title('Inputs');
-% % 
-% % subplot(2,2,3)
-% % plot(reshape(E,2,[])')
-% % title('Error')
-% % 
-% % subplot(2,2,4)
-% % plot(R)
-% % title('Residual')
-% 
-% % % 6-plots
-% % figure
-% % subplot(3,2,1)
-% % plot(X_real)
-% % title('States')
-% % 
-% % subplot(3,2,3)
-% % plot(X_est)
-% % title('Estimates')
-% % 
-% % subplot(3,2,5)
-% % plot(E)
-% % title('Error')
-% % 
-% % subplot(3,2,2)
-% % plot(Alpha)
-% % title('Alpha')
-% % legend('x1','x2','x3','x4')
-% % ylim([-0.1, 1.1])
-% % 
-% % subplot(3,2,4)
-% % plot(U)
-% % title('Input')
-% % 
-% % subplot(3,2,6)
-% % plot(R)
-% % title('Residual')
+subplot(2,3,6)
+plot((E_norm - E_norm_calc)./E_norm)
+hold on
+plot((E_norm - E_norm_bound)./E_norm)
+ylim([5 * min((E_norm - E_norm_calc)./E_norm),0])
+title('Error Norm Calc & Bound % Error')
