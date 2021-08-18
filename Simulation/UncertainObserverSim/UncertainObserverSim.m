@@ -7,10 +7,6 @@ close all
 
 % Sim Parameters
 N = 20;
-x_0_mag = 1;
-x_0_theta = pi/4;
-x_0 = x_0_mag * [cos(x_0_theta); sin(x_0_theta)];
-x_hat_0 = x_0;
 
 % Optional Tests
 testL = false;
@@ -42,24 +38,36 @@ m = size(A,3);
 p = size(B,2);
 q = size(C,1);
 
+% Initial Conditions
+%single set of I.C.s
+if false
+x_0_mag = 1;
+x_0_theta = pi/4;
+x_0 = x_0_mag * [cos(x_0_theta); sin(x_0_theta)];
+x_hat_0 = x_0;
+end
+
+%multiple I.C.s
+X_0_mag = [1];
+X_0_theta = [0, pi/4, pi/2, 3*pi/4, pi];
+X_0 = X_0_mag * [cos(X_0_theta); sin(X_0_theta)];
+X_hat_0 = X_0;
+
+
 % Parameter Definition
+%single set of alphas...
+if false
 Alpha_real = [1,0,0,0];%[0.25, 0.25, 0.25, 0.25];
 % Alpha_hat = [0,0,0,1];%[0.375, 0.125, 0.125, 0.125];
 Alpha_hat = [0.999,0.001,0,0]
-
-
-% Polytopic Calculations
-A_real = zeros(n);
-A_hat = zeros(n);
-for i = 1:m
-    A_real = A_real + Alpha_real(i) * A(:,:,i);
-    A_hat = A_hat + Alpha_hat(i) * A(:,:,i);
 end
-Delta_A = A_real - A_hat
-delta = norm(Delta_A)
+
+%Multiple Alphas
+ALPHA_real = [eye(m), [0.25;0.25;0.25;0.25]];% normalize(rand(m),1,'norm',1)];
+ALPHA_hat = [eye(m), [0.25;0.25;0.25;0.25]];%  normalize(rand(m),1,'norm',1)];
+
 
 % CVX Designing
-
 % % Control Design: u = K * x_hat
 % tol = 1e-6;
 % cvx_clear
@@ -111,12 +119,39 @@ if testL
     eig_A_LC = eig(A_LC)
 end
 
+
+% Save Data
+% X_data = zeros(size(ALPHA_real,2), size(ALPHA_hat,2), N, n);
+% X_hat_data = zeros(size(ALPHA_real,2), size(ALPHA_hat,2), N, n);
+R_data = zeros(N, q, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
+
+% Simulation
+for idx_x_0 = 1:size(X_0,2)
+    x_0 = X_0(:,idx_x_0);
+    x_hat_0 = X_hat_0(:,idx_x_0);
+for idx_real = 1:size(ALPHA_real,2)
+    Alpha_real = ALPHA_real(:,idx_real);
+for idx_hat = 1:size(ALPHA_hat,2)
+    Alpha_hat = ALPHA_hat(:,idx_hat);
+    
+% Polytopic Calculations
+A_real = zeros(n);
+A_hat = zeros(n);
+for i = 1:m
+    A_real = A_real + Alpha_real(i) * A(:,:,i);
+    A_hat = A_hat + Alpha_hat(i) * A(:,:,i);
+end
+Delta_A = A_real - A_hat
+delta = norm(Delta_A)
+
 % Sim Setup
 X = zeros(N,n);
 X_hat = zeros(N,n);
 U = zeros(N,p);
 Y = zeros(N,q);
+R = zeros(N,q);
 
+% Error Values
 E = zeros(N,n);
 E_calc = zeros(N,n);
 E_calc_2 = zeros(N,n);
@@ -157,6 +192,8 @@ for k = 1:N
     x_hat = A_hat * x_hat + B * u + L * (y - C * x_hat);
     %e_k = x_k - x_hat_k
     e = x - x_hat;
+    %r_k = C * e_k (*assuming D = 0*)
+    r = C * e;
     
     % Save Data
     X(k,:) = x;
@@ -164,6 +201,7 @@ for k = 1:N
     U(k,:) = u;
     Y(k,:) = y;
     E(k,:) = e;
+    R(k,:) = r;
     
     % Error Calc Estimate
     e_calc = x_0 - x_hat_0;
@@ -189,8 +227,7 @@ for k = 1:N
         (norm(A_hat - L*C) - norm(A_real));
 end
 
-
-% Ploting
+% Detailed Plot (of single alpha)
 if false
 figure('Position', [0,0,1500,800])
 sgtitle(num2str(x_0))
@@ -243,7 +280,6 @@ title('Error Norm Calc & Bound % Error')
 legend('Sum of Norms Error','Closed-Form Bound Error')
 end
 
-
 % Additional figures
 if false
 figure
@@ -258,11 +294,28 @@ title('% Error of Actual vs Calculated Error 2')
 legend('X_1', 'X_2')
 end
 
-% Residual Plot
-figure
-R = zeros(N,1);
-for i = 1:N
-    R(i,:) = C*E(i,:)';
+% Save Data
+R_data(:,:,idx_x_0,idx_real,idx_hat) = R;
 end
-plot(R)
-title('Residual')
+end
+end
+% Residual Plot
+figure('Position',[0,0,2.5e3,1.25e3])
+sgtitle(['Residual with varied $\alpha$, $\hat{\alpha}$, and ',...
+    '$\hat{x}_0 = x_0$'], 'Interpreter','latex')
+for idx_x_0 = 1:size(X_0,2)
+    for idx_real = 1:size(ALPHA_real,2)
+        subplot(size(ALPHA_real,2),size(X_0,2),size(ALPHA_real,2)*(idx_x_0-1) + idx_real)
+        hold on
+        for idx_hat = 1:size(ALPHA_hat,2)
+            plot(R_data(:,:,idx_x_0,idx_real,idx_hat),'DisplayName',...
+                ['$\hat{\alpha} = [', regexprep(num2str(...
+                ALPHA_hat(:,idx_hat)',2),'\s+',','), ']^T$'])
+        end
+        title(['$\alpha = [', regexprep(num2str(ALPHA_real(:,idx_real)',2),...
+            '\s+',','), ']^T$ and $\hat{x}_0 = x_0 = [',...
+            regexprep(num2str(X_0(:,idx_x_0)',2),'\s+',','),']^T$'], 'Interpreter','latex')
+        legend('Interpreter','latex')
+    end
+end
+        
