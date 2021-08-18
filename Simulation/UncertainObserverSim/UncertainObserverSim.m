@@ -29,7 +29,7 @@ testL = false;
 V = [0.2785, 0.9575;  0.5469, 0.9649]; % generated randomly
 A(:,:,1) = V * diag([0.8,0.9]) * inv(V);
 A(:,:,2) = V * diag([0.85,-0.95]) * inv(V);
-A(:,:,3) = V * diag([0.85,-0.95]) * inv(V);
+A(:,:,3) = V * diag([-0.85,0.95]) * inv(V);
 A(:,:,4) = V * diag([-0.9,-0.8]) * inv(V);
 
 B = 0;
@@ -43,8 +43,9 @@ p = size(B,2);
 q = size(C,1);
 
 % Parameter Definition
-Alpha_real = [0.25, 0.25, 0.25, 0.25];
-Alpha_hat = [0.375, 0.125, 0.125, 0.125];
+Alpha_real = [1,0,0,0];%[0.25, 0.25, 0.25, 0.25];
+% Alpha_hat = [0,0,0,1];%[0.375, 0.125, 0.125, 0.125];
+Alpha_hat = [0.999,0.001,0,0]
 
 
 % Polytopic Calculations
@@ -54,7 +55,8 @@ for i = 1:m
     A_real = A_real + Alpha_real(i) * A(:,:,i);
     A_hat = A_hat + Alpha_hat(i) * A(:,:,i);
 end
-Delta_A = A_real - A_hat;
+Delta_A = A_real - A_hat
+delta = norm(Delta_A)
 
 % CVX Designing
 
@@ -77,11 +79,12 @@ Delta_A = A_real - A_hat;
 
 
 % Observer Design: x_hat = A_hat * x_hat + B * u + L * (y - y_hat)
-cvx_begin sdp
+cvx_begin sdp quiet
     variable X(n,q)
     variable Q(n,n) symmetric
     tol = 1e-6;
-%     minimize(trace(Q))
+    minimize(trace(Q))
+%     maximize(trace(Q));
     subject to
         for i = 1:m
             Q >= tol*eye(n);
@@ -111,7 +114,7 @@ end
 % Sim Setup
 X = zeros(N,n);
 X_hat = zeros(N,n);
-% U = zeros(N,p);
+U = zeros(N,p);
 Y = zeros(N,q);
 
 E = zeros(N,n);
@@ -119,6 +122,7 @@ E_calc = zeros(N,n);
 E_calc_2 = zeros(N,n);
 E_norm = zeros(N,1);
 E_norm_calc = zeros(N,1);
+E_norm_calc_2 = zeros(N,1);
 E_norm_bound = zeros(N,1);
 
 % Inital setup (k=0)
@@ -126,27 +130,38 @@ x = x_0;
 x_hat = x_hat_0;
 e = x - x_hat;
 e_calc_2 = x_0 - x_hat_0;
+e_norm_calc_2 = norm(e_calc_2);
 
 % Simulation
 for k = 1:N
     % Control
     u = 0; % No Input
     
-    % Error Calc attempt (recursive)
-%     e_calc_2 = Delta_A * x + (A_hat - L*C) * e_calc_2;
+    % Error Calc 2(recursive)
+    %e_k = Delta_A * x_{k-1} + (A_hat - L*C) * e_{k-1};
     e_calc_2 = Delta_A * x_hat + (Delta_A + A_hat - L*C) * e_calc_2;
     E_calc_2(k,:) = e_calc_2;
     
-    % Time Update
-    x = A_real * x + B * u;
+    % Error norm cal 2 (recursive)
+    %\norm{e_k} \leq \delta * \norm{\hat{x}_{k-1}} + (\delta +
+    %\norm{\hat{A} - LC}) \norm{e_{k-1}}
+    e_norm_calc_2 = delta * norm(x_hat) + (delta + norm(A_hat - L*C)) * e_norm_calc_2;
+    E_norm_calc_2(k,:) = e_norm_calc_2;
+    
+    % Update Eqs
+    %y_{k-1} = C x_{k-1} + D * u_{k-1}
     y = C * x + D * u;
+    %x_k = A * x_{k-1} + B * u_{k-1}
+    x = A_real * x + B * u;
+    %x_hat_k = A_hat * x_hat_{k-1} + B * u_{k-1} + L * (y_{k-1} - C * x_hat_{k-1})
     x_hat = A_hat * x_hat + B * u + L * (y - C * x_hat);
+    %e_k = x_k - x_hat_k
     e = x - x_hat;
     
     % Save Data
     X(k,:) = x;
     X_hat(k,:) = x_hat;
-%     U(k,:) = u;
+    U(k,:) = u;
     Y(k,:) = y;
     E(k,:) = e;
     
@@ -156,9 +171,6 @@ for k = 1:N
         e_calc = e_calc + (A_hat - L * C)^(i) * Delta_A * A_real^(k - 1 - i) * x_0;
     end
     E_calc(k,:) = e_calc;
-    
-    
-    
 
     % Error Norm
     E_norm(k,1) = norm(x - x_hat);
@@ -175,25 +187,11 @@ for k = 1:N
     E_norm_bound(k,:) = norm(Delta_A) * norm(x_0) * ...
         (norm(A_hat - L*C)^k - norm(A_real)^k)/...
         (norm(A_hat - L*C) - norm(A_real));
-    
-    if false
-%     % X_hat Based Calc:
-%     x_hat_calc = x_hat_0;
-%     x_hat_calc =  L*C*A_real^k *x_0;
-%     if k > 1
-%         for i = 1:(k-1)
-%             x_hat_calc = (A_hat - L*C)^i * L*C*(A_real)^(k-1-i) * x_0;
-%         end
-%     end
-%     x_hat_calc = (A_hat - L*C)^k * x_0;
-%     
-%     e_calc = A_real^k * x_0 - x_hat_calc;
-%     E_calc(k,:) = e_calc;
-    end
 end
 
 
 % Ploting
+if false
 figure('Position', [0,0,1500,800])
 sgtitle(num2str(x_0))
 
@@ -239,22 +237,32 @@ legend('Actual','Sum of Norms','Closed-Form Bound')
 subplot(2,3,6)
 plot((E_norm - E_norm_calc)./E_norm)
 hold on
-plot((E_norm - E_norm_bound)./E_norm)
+% plot((E_norm - E_norm_bound)./E_norm)
 % ylim([5 * min((E_norm - E_norm_calc)./E_norm),0])
 title('Error Norm Calc & Bound % Error')
 legend('Sum of Norms Error','Closed-Form Bound Error')
+end
 
-% close
 
-%additional figures
+% Additional figures
+if false
 figure
 subplot(2,1,1)
 plot(((E-E_calc)./E)*100)
 title('% Error of Actual vs Calculated Error')
 legend('X_1', 'X_2')
 
-
 subplot(2,1,2)
 plot(((E-E_calc_2)./E)*100)
 title('% Error of Actual vs Calculated Error 2')
 legend('X_1', 'X_2')
+end
+
+% Residual Plot
+figure
+R = zeros(N,1);
+for i = 1:N
+    R(i,:) = C*E(i,:)';
+end
+plot(R)
+title('Residual')
