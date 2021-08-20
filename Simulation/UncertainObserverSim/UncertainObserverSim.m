@@ -11,22 +11,22 @@ N = 20;
 % Optional Tests
 testL = false;
 
-% % Toy System Def
-% A(:,:,1) = [-0.80, 0.25; 0.25,-0.30];
-% A(:,:,2) = [ 0.30, 0.70; 0.70, 0.00];
-% A(:,:,3) = [-0.30, 0.65; 0.55, 0.10];
-% A(:,:,4) = [ 0.55,-0.20;-0.40,-0.30];
-% 
-% B = [1.5; -0.5];
-% C = [1, 0];
-% D = 0;
+% Toy System Def
+A(:,:,1) = [-0.80, 0.25; 0.25,-0.30];
+A(:,:,2) = [ 0.30, 0.70; 0.70, 0.00];
+A(:,:,3) = [-0.30, 0.65; 0.55, 0.10];
+A(:,:,4) = [ 0.55,-0.20;-0.40,-0.30];
 
-% Toy Sys Def 2
-V = [0.2785, 0.9575;  0.5469, 0.9649]; % generated randomly
-A(:,:,1) = V * diag([0.8,0.9]) * inv(V);
-A(:,:,2) = V * diag([0.85,-0.95]) * inv(V);
-A(:,:,3) = V * diag([-0.85,0.95]) * inv(V);
-A(:,:,4) = V * diag([-0.9,-0.8]) * inv(V);
+B = [1.5; -0.5];
+C = [1, 0];
+D = 0;
+
+% % Toy Sys Def 2
+% V = [0.2785, 0.9575;  0.5469, 0.9649]; % generated randomly
+% A(:,:,1) = V * diag([0.8,0.9]) * inv(V);
+% A(:,:,2) = V * diag([0.85,-0.95]) * inv(V);
+% A(:,:,3) = V * diag([-0.85,0.95]) * inv(V);
+% A(:,:,4) = V * diag([-0.9,-0.8]) * inv(V);
 
 B = 0;
 C = [0.2, 0.5];
@@ -50,7 +50,7 @@ end
 %multiple I.C.s
 X_0_mag = [1];
 X_0_theta = [0, pi/4, pi/2, 3*pi/4, pi];
-X_0 = X_0_mag * [cos(X_0_theta); sin(X_0_theta)];
+X_0 = round(X_0_mag * [cos(X_0_theta); sin(X_0_theta)],2);
 X_hat_0 = X_0;
 
 
@@ -314,7 +314,7 @@ for idx_x_0 = 1:size(X_0,2)
         end
         title(['$\alpha = [', regexprep(num2str(ALPHA_real(:,idx_real)',2),...
             '\s+',','), ']^T$ and $\hat{x}_0 = x_0 = [',...
-            regexprep(num2str(X_0(:,idx_x_0)',2),'\s+',','),']^T$'], 'Interpreter','latex')
+            regexprep(num2str(X_0(:,idx_x_0)',1),'\s+',','),']^T$'], 'Interpreter','latex')
         legend('Interpreter','latex')
     end
 end
