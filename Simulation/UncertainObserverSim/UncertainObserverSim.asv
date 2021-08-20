@@ -11,22 +11,22 @@ N = 20;
 % Optional Tests
 testL = false;
 
-% % Toy System Def
-% A(:,:,1) = [-0.80, 0.25; 0.25,-0.30];
-% A(:,:,2) = [ 0.30, 0.70; 0.70, 0.00];
-% A(:,:,3) = [-0.30, 0.65; 0.55, 0.10];
-% A(:,:,4) = [ 0.55,-0.20;-0.40,-0.30];
-% 
-% B = [1.5; -0.5];
-% C = [1, 0];
-% D = 0;
+% Toy System Def
+A(:,:,1) = [-0.80, 0.25; 0.25,-0.30];
+A(:,:,2) = [ 0.30, 0.70; 0.70, 0.00];
+A(:,:,3) = [-0.30, 0.65; 0.55, 0.10];
+A(:,:,4) = [ 0.55,-0.20;-0.40,-0.30];
 
-% Toy Sys Def 2
-V = [0.2785, 0.9575;  0.5469, 0.9649]; % generated randomly
-A(:,:,1) = V * diag([0.8,0.9]) * inv(V);
-A(:,:,2) = V * diag([0.85,-0.95]) * inv(V);
-A(:,:,3) = V * diag([-0.85,0.95]) * inv(V);
-A(:,:,4) = V * diag([-0.9,-0.8]) * inv(V);
+B = [1.5; -0.5];
+C = [1, 0];
+D = 0;
+
+% % Toy Sys Def 2
+% V = [0.2785, 0.9575;  0.5469, 0.9649]; % generated randomly
+% A(:,:,1) = V * diag([0.8,0.9]) * inv(V);
+% A(:,:,2) = V * diag([0.85,-0.95]) * inv(V);
+% A(:,:,3) = V * diag([-0.85,0.95]) * inv(V);
+% A(:,:,4) = V * diag([-0.9,-0.8]) * inv(V);
 
 B = 0;
 C = [0.2, 0.5];
@@ -50,7 +50,7 @@ end
 %multiple I.C.s
 X_0_mag = [1];
 X_0_theta = [0, pi/4, pi/2, 3*pi/4, pi];
-X_0 = X_0_mag * [cos(X_0_theta); sin(X_0_theta)];
+X_0 = round(X_0_mag * [cos(X_0_theta); sin(X_0_theta)],2);
 X_hat_0 = X_0;
 
 
@@ -123,7 +123,7 @@ end
 % Save Data
 % X_data = zeros(size(ALPHA_real,2), size(ALPHA_hat,2), N, n);
 % X_hat_data = zeros(size(ALPHA_real,2), size(ALPHA_hat,2), N, n);
-R_data = zeros(N, q, size(ALPHA_real,2), size(ALPHA_hat,2));
+R_data = zeros(N, q, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
 
 % Simulation
 for idx_x_0 = 1:size(X_0,2)
@@ -192,7 +192,7 @@ for k = 1:N
     x_hat = A_hat * x_hat + B * u + L * (y - C * x_hat);
     %e_k = x_k - x_hat_k
     e = x - x_hat;
-    %r_k = C * e_k (*assuming D = 0*)
+    %r_k = C * e_k
     r = C * e;
     
     % Save Data
@@ -300,20 +300,53 @@ end
 end
 end
 % Residual Plot
-figure('Position',[0,0,875,1.25e3])
+figure('Position',[0,0,2.5e3,1.25e3])
 sgtitle(['Residual with varied $\alpha$, $\hat{\alpha}$, and ',...
     '$\hat{x}_0 = x_0$'], 'Interpreter','latex')
-for idx_real = 1:size(R_data,3)
-    subplot(size(R_data,3),1,idx_real)
-    hold on
-    for idx_hat = 1:size(R_data,4)
-        plot(R_data(:,:,idx_real,idx_hat),'DisplayName',...
-            ['$\hat{\alpha} = [', regexprep(num2str(...
-            ALPHA_hat(:,idx_hat)',2),'\s+',','), ']^T$'])
+for idx_x_0 = 1:size(X_0,2)
+    for idx_real = 1:size(ALPHA_real,2)
+        subplot(size(ALPHA_real,2),size(X_0,2),size(ALPHA_real,2)*(idx_x_0-1) + idx_real)
+        hold on
+        for idx_hat = 1:size(ALPHA_hat,2)
+            plot(R_data(:,:,idx_x_0,idx_real,idx_hat),'DisplayName',...
+                ['$\hat{\alpha} = [', regexprep(num2str(...
+                ALPHA_hat(:,idx_hat)',2),'\s+',','), ']^T$'])
+        end
+        title(['$\alpha = [', regexprep(num2str(ALPHA_real(:,idx_real)',2),...
+            '\s+',','), ']^T$ and $\hat{x}_0 = x_0 = [',...
+            regexprep(num2str(X_0(:,idx_x_0)',1),'\s+',','),']^T$'], 'Interpreter','latex')
+        legend('Interpreter','latex')
     end
-    title(['$\alpha = [', regexprep(num2str(ALPHA_real(:,idx_real)',2),...
-        '\s+',','), ']^T$ and $\hat{x}_0 = x_0 = [',...
-        regexprep(num2str(x_0',2),'\s+',','),']^T$'], 'Interpreter','latex')
-    legend('Interpreter','latex')
 end
-        
+
+close all
+
+% Independent Sim
+X_all = zeros(N,n,m);
+for i = 1:m
+    X_temp = zeros(N,n);
+    x = x_0;
+    for k = 1:N
+        u = 0;
+        x = A(:,:,i) * x + B * u;
+        X_all(k,:,i) = x;
+    end
+end
+
+X_test = zeros(N,n);
+for i = 1:m
+    X_test = X_test + Alpha_real(i) * X_all(:,:,i);
+end
+
+figure
+for idx_n = 1:n
+    subplot(n,1,idx_n)
+    hold on
+%     for i = 1:m
+%         plot(X_all(:,n,i)', 'DisplayName', num2str(i))
+%     end
+    plot(X_test(:,idx_n), 'DisplayName', 'TestSum')
+    plot(X(:,idx_n), 'DisplayName', 'Original')
+    legend
+end
+  

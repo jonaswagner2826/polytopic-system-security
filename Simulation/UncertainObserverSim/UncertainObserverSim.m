@@ -192,7 +192,7 @@ for k = 1:N
     x_hat = A_hat * x_hat + B * u + L * (y - C * x_hat);
     %e_k = x_k - x_hat_k
     e = x - x_hat;
-    %r_k = C * e_k (*assuming D = 0*)
+    %r_k = C * e_k
     r = C * e;
     
     % Save Data
@@ -318,4 +318,38 @@ for idx_x_0 = 1:size(X_0,2)
         legend('Interpreter','latex')
     end
 end
-        
+
+
+
+independentSim = false;
+if independentSim  
+close all
+% Independent Sim
+X_all = zeros(N,n,m);
+for i = 1:m
+    X_temp = zeros(N,n);
+    x = x_0;
+    for k = 1:N
+        u = 0;
+        x = A(:,:,i) * x + B * u;
+        X_all(k,:,i) = x;
+    end
+end
+
+X_test = zeros(N,n);
+for i = 1:m
+    X_test = X_test + Alpha_real(i) * X_all(:,:,i);
+end
+
+figure
+for idx_n = 1:n
+    subplot(n,1,idx_n)
+    hold on
+%     for i = 1:m
+%         plot(X_all(:,idx_n,i)', 'DisplayName', num2str(i))
+%     end
+    plot(X_test(:,idx_n), 'DisplayName', 'TestSum')
+    plot(X(:,idx_n), 'DisplayName', 'Original')
+    legend
+end
+end
