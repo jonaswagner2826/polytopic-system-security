@@ -9,20 +9,24 @@ close all
 N = 20;
 
 % Optional Parts
+runSim = false;
+testCtrb = false;
+testObsv = false;
 testL = false;
 plotAllResiduals = false;
-plotResidualStatistics = true;
-independentSim = false;
+plotResidualStatistics = false;
+independentSim = true;
 
-% Toy System Def
-A(:,:,1) = [-0.80, 0.25; 0.25,-0.30];
-A(:,:,2) = [ 0.30, 0.70; 0.70, 0.00];
-A(:,:,3) = [-0.30, 0.65; 0.55, 0.10];
-A(:,:,4) = [ 0.55,-0.20;-0.40,-0.30];
 
-B = [1.5; -0.5];
-C = [1, 0];
-D = 0;
+% % Toy System Def
+% A(:,:,1) = [-0.80, 0.25; 0.25,-0.30];
+% A(:,:,2) = [ 0.30, 0.70; 0.70, 0.00];
+% A(:,:,3) = [-0.30, 0.65; 0.55, 0.10];
+% A(:,:,4) = [ 0.55,-0.20;-0.40,-0.30];
+% 
+% B = [1.5; -0.5];
+% C = [1, 0];
+% D = 0;
 
 % % Toy Sys Def 2
 % V = [0.2785, 0.9575;  0.5469, 0.9649]; % generated randomly
@@ -35,18 +39,54 @@ D = 0;
 % C = [0.2, 0.5];
 % D = 0;
 
+% Toy Sys Def 3
+V =[0.7780    0.3669    0.8727    0.6220;
+    0.4267    0.7948    0.2858    0.0751;
+    0.2800    0.0387    0.6568    0.9668;
+    0.3335    0.7267    0.2319    0.6100]; % Generated Randomly
+A(:,:,1) = V * diag([-0.410    0.9096    0.7019   -0.7042]) * inv(V);
+A(:,:,2) = V * diag([0.7324   -0.7779   -0.5655    0.1609]) * inv(V);
+A(:,:,3) = V * diag([0.1511    0.7571    0.5847    0.0015]) * inv(V);
+A(:,:,4) = V * diag([0.8152   -0.4052    0.3449   -0.5620]) * inv(V);
+
+B =[0.2779   -0.1673;
+    0.7863    0.4796;
+   -0.8786    0.7859;
+   -0.6485   -0.9483];
+
+C = [0.4745   -0.1475   -0.3936    0.0739;
+    -0.6376   -0.8037    0.5602    0.5381];
+
+D = 0;
+
 % System Dimensions
 n = size(A,1);
 m = size(A,3);
 p = size(B,2);
 q = size(C,1);
 
+% Test Controllability
+if testCtrb
+    for i = 1:m
+        rank(ctrb(A(:,:,i),B))
+    end
+end
+
+% Test Observability
+if testObsv
+    for i = 1:m
+        rank(obsv(A(:,:,i),C))
+    end
+end
+
+
 % Initial Conditions
 %single set of I.C.s
-if false
+if independentSim
+randTransform = [0.4664    0.8965;    0.4564    0.4274;    0.1278    0.1758;    0.6399    0.2949];
 x_0_mag = 1;
 x_0_theta = pi/4;
-x_0 = x_0_mag * [cos(x_0_theta); sin(x_0_theta)];
+x_0 = randTransform * x_0_mag * [cos(x_0_theta); sin(x_0_theta)];
 x_hat_0 = x_0;
 end
 
@@ -131,6 +171,7 @@ end
 R_data = zeros(N, q, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
 
 %% Simulation
+if runSim
 % Initial Conditions loop
 for idx_x_0 = 1:size(X_0,2)
     x_0 = X_0(:,idx_x_0);
@@ -307,7 +348,7 @@ for idx_x_0 = 1:size(X_0,2)
         end
     end
 end
-
+end
 %% All Residual Plot
 if plotAllResiduals
     figure('Position',[0,0,2.5e3,1.25e3])
@@ -382,32 +423,105 @@ end
 %% Independent Sim
 if independentSim  
 close all
+
+% Setup
+Alpha_real = rand(m,1);%ALPHA_real(:,1);
+Alpha_real = Alpha_real / sum(Alpha_real);
+Alpha_hat = ALPHA_hat(:,5);
+
+A_real = zeros(n);
+A_hat = zeros(n);
+for i = 1:m
+    A_real = A_real + Alpha_real(i) * A(:,:,i);
+    A_hat = A_hat + Alpha_hat(i) * A(:,:,i);
+end
+
 % Independent Sim
 X_all = zeros(N,n,m);
 for i = 1:m
     X_temp = zeros(N,n);
     x = x_0;
     for k = 1:N
-        u = 0;
+        u = zeros(p,1);
         x = A(:,:,i) * x + B * u;
         X_all(k,:,i) = x;
     end
 end
 
-X_test = zeros(N,n);
-for i = 1:m
-    X_test = X_test + X_all(:,:,i);
+% Regular Sim
+X_real = zeros(N,n);
+X_hat = zeros(N,n);
+x = x_0;
+x_hat = x_hat_0;
+for k = 1:N
+    y = C * x + D * u;
+    x_hat = A_hat * x_hat + B * u + L * (y - C*x_hat);
+    x = A_real * x + B * u;
+    X_real(k,:) = x;
+    X_hat(k,:) = x_hat;
 end
 
-figure
+% Alpha Calc
+ALPHA_tilde = zeros(N,m);
+ALPHA_tilde_hat = zeros(N,m);
+P = zeros(m); % Transform Matrix (assuming n = m)
+for k = 1:N
+    for i = 1:m
+        P(:,i) = X_all(k,:,i);
+    end
+    ALPHA_tilde(k,:) = P \ X_real(k,:)';
+    ALPHA_tilde_hat(k,:) = P \ X_hat(k,:)';
+end
+
+
+% Reconstruction
+X_tilde = zeros(size(X_real));
+X_tilde_hat = zeros(size(X_hat));
+for i = 1:m
+    X_tilde = X_tilde + ALPHA_tilde(:,i) .* X_all(:,:,i);
+    X_tilde_hat = X_tilde_hat + ALPHA_tilde_hat(:,i) .* X_all(:,:,i);
+end
+
+% Ploting
+figure('Position',[0,0,9e2,1.3e3])
+sgtitle('System States for different Subsystems')
 for idx_n = 1:n
     subplot(n,1,idx_n)
     hold on
-%     for i = 1:m
-%         plot(X_all(:,idx_n,i)', 'DisplayName', num2str(i))
-%     end
-    plot(X_test(:,idx_n), 'DisplayName', 'TestSum')
-    plot(X(:,idx_n), 'DisplayName', 'Original')
+    for i = 1:m
+        plot(X_all(:,idx_n,i)', 'DisplayName', ['m = ',num2str(i)])
+    end
+    plot(X_real(:,idx_n), 'DisplayName', 'Actual')
+    title(['x_',num2str(idx_n)])
     legend
 end
+
+% This all assumes n = m
+figure('Position',[0,0,2.2e3,1.2e3])
+sgtitle('Subsystem Based w/ Alpha Parameter Estimates')
+num_col = 3;
+for idx_n = 1:n
+    subplot(n,num_col,num_col*idx_n-2)
+    hold on
+    plot(ALPHA_tilde(:,i), 'DisplayName', '$\tilde{\alpha}$')
+    plot(ALPHA_tilde_hat(:,i), 'DisplayName', '$\hat{\tilde{\alpha}}$')
+    title('Alpha Parameters')
+    legend('Interpreter','latex')
+    
+    subplot(n,num_col,num_col*idx_n-1)
+    hold on
+    plot(X_real(:,idx_n), 'DisplayName', 'Actual')
+    plot(X_tilde(:,idx_n), 'DisplayName', 'Alpha Based')
+    title('Real vs Reconstructed State')
+    legend
+    
+    subplot(n,num_col,num_col*idx_n)
+    hold on
+    plot(X_hat(:,idx_n), 'DisplayName', 'Actual')
+    plot(X_tilde_hat(:,idx_n), 'DisplayName', 'Alpha Based')
+    title('Real vs Reconstructed Estimate')
+    legend
+    
+end
+
 end
