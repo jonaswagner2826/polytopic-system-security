@@ -503,8 +503,8 @@ num_col = 3;
 for idx_n = 1:n
     subplot(n,num_col,num_col*idx_n-2)
     hold on
-    plot(ALPHA_tilde(:,i), 'DisplayName', '$\tilde{\alpha}$')
-    plot(ALPHA_tilde_hat(:,i), 'DisplayName', '$\hat{\tilde{\alpha}}$')
+    plot(ALPHA_tilde(:,idx_n), 'DisplayName', '$\tilde{\alpha}$')
+    plot(ALPHA_tilde_hat(:,idx_n), 'DisplayName', '$\hat{\tilde{\alpha}}$')
     title('Alpha Parameters')
     legend('Interpreter','latex')
     
