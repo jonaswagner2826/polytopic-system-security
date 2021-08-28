@@ -9,24 +9,25 @@ close all
 N = 20;
 
 % Optional Parts
-runSim = false;
+runSim = true;
 testCtrb = false;
 testObsv = false;
 testL = false;
 plotAllResiduals = false;
 plotResidualStatistics = false;
-independentSim = true;
+scatterPlot_x_k = true;
+independentSim = false;
 
 
-% % Toy System Def
-% A(:,:,1) = [-0.80, 0.25; 0.25,-0.30];
-% A(:,:,2) = [ 0.30, 0.70; 0.70, 0.00];
-% A(:,:,3) = [-0.30, 0.65; 0.55, 0.10];
-% A(:,:,4) = [ 0.55,-0.20;-0.40,-0.30];
-% 
-% B = [1.5; -0.5];
-% C = [1, 0];
-% D = 0;
+% Toy System Def
+A(:,:,1) = [-0.80, 0.25; 0.25,-0.30];
+A(:,:,2) = [ 0.30, 0.70; 0.70, 0.00];
+A(:,:,3) = [-0.30, 0.65; 0.55, 0.10];
+A(:,:,4) = [ 0.55,-0.20;-0.40,-0.30];
+
+B = [1.5; -0.5];
+C = [1, 0];
+D = 0;
 
 % % Toy Sys Def 2
 % V = [0.2785, 0.9575;  0.5469, 0.9649]; % generated randomly
@@ -39,25 +40,25 @@ independentSim = true;
 % C = [0.2, 0.5];
 % D = 0;
 
-% Toy Sys Def 3
-V =[0.7780    0.3669    0.8727    0.6220;
-    0.4267    0.7948    0.2858    0.0751;
-    0.2800    0.0387    0.6568    0.9668;
-    0.3335    0.7267    0.2319    0.6100]; % Generated Randomly
-A(:,:,1) = V * diag([-0.410    0.9096    0.7019   -0.7042]) * inv(V);
-A(:,:,2) = V * diag([0.7324   -0.7779   -0.5655    0.1609]) * inv(V);
-A(:,:,3) = V * diag([0.1511    0.7571    0.5847    0.0015]) * inv(V);
-A(:,:,4) = V * diag([0.8152   -0.4052    0.3449   -0.5620]) * inv(V);
-
-B =[0.2779   -0.1673;
-    0.7863    0.4796;
-   -0.8786    0.7859;
-   -0.6485   -0.9483];
-
-C = [0.4745   -0.1475   -0.3936    0.0739;
-    -0.6376   -0.8037    0.5602    0.5381];
-
-D = 0;
+% % Toy Sys Def 3
+% V =[0.7780    0.3669    0.8727    0.6220;
+%     0.4267    0.7948    0.2858    0.0751;
+%     0.2800    0.0387    0.6568    0.9668;
+%     0.3335    0.7267    0.2319    0.6100]; % Generated Randomly
+% A(:,:,1) = V * diag([-0.410    0.9096    0.7019   -0.7042]) * inv(V);
+% A(:,:,2) = V * diag([0.7324   -0.7779   -0.5655    0.1609]) * inv(V);
+% A(:,:,3) = V * diag([0.1511    0.7571    0.5847    0.0015]) * inv(V);
+% A(:,:,4) = V * diag([0.8152   -0.4052    0.3449   -0.5620]) * inv(V);
+% 
+% B =[0.2779   -0.1673;
+%     0.7863    0.4796;
+%    -0.8786    0.7859;
+%    -0.6485   -0.9483];
+% 
+% C = [0.4745   -0.1475   -0.3936    0.0739;
+%     -0.6376   -0.8037    0.5602    0.5381];
+% 
+% D = 0;
 
 % System Dimensions
 n = size(A,1);
@@ -106,8 +107,10 @@ Alpha_hat = [0.999,0.001,0,0]
 end
 
 %Multiple Alphas
-num_extra_alpha_hat = 50;
-ALPHA_real = [eye(m), [0.25;0.25;0.25;0.25]];% normalize(rand(m),1,'norm',1)];
+num_extra_alpha_real = 50;
+num_extra_alpha_hat = 0;
+ALPHA_real = [eye(m), [0.25;0.25;0.25;0.25],...
+    normalize(rand(m, num_extra_alpha_real),1,'norm',1)];
 ALPHA_hat = [eye(m), [0.25;0.25;0.25;0.25],...
     normalize(rand(m, num_extra_alpha_hat),1,'norm',1)];
 
@@ -165,13 +168,13 @@ if testL
 end
 
 
-% Save Data
-% X_data = zeros(size(ALPHA_real,2), size(ALPHA_hat,2), N, n);
-% X_hat_data = zeros(size(ALPHA_real,2), size(ALPHA_hat,2), N, n);
-R_data = zeros(N, q, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
-
 %% Simulation
-if runSim
+if runSim    
+% Save Data
+X_data = zeros(N, n, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
+X_hat_data = zeros(N, n, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
+R_data = zeros(N, q, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
+    
 % Initial Conditions loop
 for idx_x_0 = 1:size(X_0,2)
     x_0 = X_0(:,idx_x_0);
@@ -251,29 +254,32 @@ for idx_x_0 = 1:size(X_0,2)
                 Y(k,:) = y;
                 E(k,:) = e;
                 R(k,:) = r;
+                X_data(k,:,idx_x_0,idx_real,idx_hat) = x;
+                X_hat_data(k,:,idx_x_0,idx_real,idx_hat) = x_hat;
+                R_data(:,:,idx_x_0,idx_real,idx_hat) = r;
 
-                % Error Calc Estimate
-                e_calc = x_0 - x_hat_0;
-                for i = 0:(k-1)
-                    e_calc = e_calc + (A_hat - L * C)^(i) * Delta_A * A_real^(k - 1 - i) * x_0;
-                end
-                E_calc(k,:) = e_calc;
-
-                % Error Norm
-                E_norm(k,1) = norm(x - x_hat);
-
-                % Error Norm Calc
-                e_norm_calc = 0;
-                for i = 0:(k-1)
-                    e_norm_calc = e_norm_calc +...
-                        norm((A_hat - L * C)^(i) * Delta_A * A_real^(k -1 - i)) * norm(x_0);
-                end
-                E_norm_calc(k,:) = e_norm_calc;
-
-                % Error Norm Bound
-                E_norm_bound(k,:) = norm(Delta_A) * norm(x_0) * ...
-                    (norm(A_hat - L*C)^k - norm(A_real)^k)/...
-                    (norm(A_hat - L*C) - norm(A_real));
+%                 % Error Calc Estimate
+%                 e_calc = x_0 - x_hat_0;
+%                 for i = 0:(k-1)
+%                     e_calc = e_calc + (A_hat - L * C)^(i) * Delta_A * A_real^(k - 1 - i) * x_0;
+%                 end
+%                 E_calc(k,:) = e_calc;
+% 
+%                 % Error Norm
+%                 E_norm(k,1) = norm(x - x_hat);
+% 
+%                 % Error Norm Calc
+%                 e_norm_calc = 0;
+%                 for i = 0:(k-1)
+%                     e_norm_calc = e_norm_calc +...
+%                         norm((A_hat - L * C)^(i) * Delta_A * A_real^(k -1 - i)) * norm(x_0);
+%                 end
+%                 E_norm_calc(k,:) = e_norm_calc;
+% 
+%                 % Error Norm Bound
+%                 E_norm_bound(k,:) = norm(Delta_A) * norm(x_0) * ...
+%                     (norm(A_hat - L*C)^k - norm(A_real)^k)/...
+%                     (norm(A_hat - L*C) - norm(A_real));
             end
 
             % Detailed Plot (of single alpha)
@@ -343,8 +349,10 @@ for idx_x_0 = 1:size(X_0,2)
             legend('X_1', 'X_2')
             end
 
-            % Save Data
-            R_data(:,:,idx_x_0,idx_real,idx_hat) = R;
+%             % Save Data
+%             X_data(:,:,idx_x_0,idx_real,idx_hat) = X;
+%             X_data(:,:,idx_x_0,idx_real,idx_hat) = X_hat;
+%             R_data(:,:,idx_x_0,idx_real,idx_hat) = R;
         end
     end
 end
@@ -370,7 +378,6 @@ if plotAllResiduals
         end
     end
 end
-
 
 %% Residual Response Statistic Plots
 residual_norm_p = inf;
@@ -418,6 +425,84 @@ if plotResidualStatistics
     end
     linkaxes(axes,'xy')
 end
+
+%% Scatter Plot of x_k for many A \in S
+if scatterPlot_x_k
+    k = 2;
+    axes = [];
+    figure('Position',[0,0,9e2,1.3e3])
+    sgtitle(['Scatter Plot of x_k at k = ', num2str(k)])
+    % Only plots for x_k(1) and x_k(2)
+    for idx_x_0 = 1:size(X_0,2)
+        X1_data = reshape(X_data(k, 1, idx_x_0, :, :),1,[]);
+        X2_data = reshape(X_data(k, 2, idx_x_0, :, :),1,[]);
+        
+        ax = subplot(size(X_0,2),1,idx_x_0);
+        axes = [axes, ax];
+        hold on
+        
+        %Plots
+        scatter(X1_data, X2_data)
+        X1 = zeros(1,m);
+        X2 = zeros(1,m);
+        for i = 1:m
+            X1(i) = X_data(k, 1, idx_x_0, i, 1);
+            X2(i) = X_data(k, 2, idx_x_0, i, 1);
+        end
+        scatter(X1, X2, 'r')
+        title(['x_0 = [', num2str(reshape(X_0(:,idx_x_0),1,[])), ']^T'])
+        xlabel('x(1)')
+        ylabel('x(2)')
+    end
+    linkaxes(axes,'xy')
+end
+
+%% 3D Scatter Plot of x_k for many A \in S
+if scatterPlot_x_k
+    idx_x_0 = 2;
+    figure('Position',[0,0,9e2,1.3e3])
+    sgtitle(['3D Scatter Plot of x_k with x_0 = [', ...
+        num2str(reshape(X_0(:,idx_x_0),1,[])), ']^T'])
+    
+    
+    X1 = zeros(N,size(ALPHA_real,2));
+    X2 = zeros(N,size(ALPHA_real,2));
+    K = zeros(N,size(ALPHA_real,2));
+    for k = 1:N
+        X1(k,:) = reshape(X_data(k, 1, idx_x_0, :, 1),1,[]);
+        X2(k,:) = reshape(X_data(k, 2, idx_x_0, :, 1),1,[]);
+        K(k,:) = k * ones(1,size(Alpha_real,2));
+    end
+    X1 = reshape(X1,1,[]);
+    X2 = reshape(X2,1,[]);
+    K = reshape(K,1,[]);
+    scatter3(X1,X2,K)
+    xlabel('x(1)')
+    ylabel('x(2)')
+    zlabel('k')
+    
+    hold on
+    
+    % Just outsides...
+    X1 = zeros(N,m);
+    X2 = zeros(N,m);
+    K = zeros(N,m);
+    for k = 1:N
+        for i = 1:m
+            X1(i) = X_data(k, 1, idx_x_0, i, 1);
+            X2(i) = X_data(k, 2, idx_x_0, i, 1);
+            K(k,i) = k;
+        end
+    end
+    X1 = reshape(X1,1,[]);
+    X2 = reshape(X2,1,[]);
+    K = reshape(K,1,[]);
+    scatter3(X1,X2,K, 'r')
+    xlabel('x(1)')
+    ylabel('x(2)')
+    zlabel('k')
+end
+
 
 
 %% Independent Sim
