@@ -10,7 +10,7 @@ close all
 N = 20;
 
 % Selection
-sysSelect = 1;
+sysSelect = 4;
 alphaSelect = 2; %0 = single set, 1 = random alphas, 2 = random edge alphas
 
 
@@ -25,7 +25,15 @@ independentSim = false;
 % Run Plots
 plotAllResiduals = false;
 plotResidualStatistics = false;
-scatterPlot_x_k = true;
+scatterPlot_x_k = false;
+scatterPlot3D_x_k = false;
+scatterPlot_z_k = true;
+
+
+% Calcualte Z_k
+if scatterPlot_z_k
+    calculate_Z_k = true;
+end
 
 
 
@@ -74,6 +82,18 @@ C = [0.4745   -0.1475   -0.3936    0.0739;
 
 D = 0;
 
+
+elseif sysSelect == 4
+% Toy System Def
+A(:,:,1) = [-0.80, 0.25; 0.25,-0.30];
+A(:,:,2) = [ 0.30, 0.70; 0.70, 0.00];
+A(:,:,3) = [-0.30, 0.65; 0.55, 0.10];
+A(:,:,4) = [ 0.55,-0.20;-0.40,-0.30];
+
+B = [1.5; -0.5];
+C = [2, 1; 9, 0];
+D = 0;
+
 end
 
 % System Dimensions
@@ -106,11 +126,11 @@ Alpha_hat = [0.999,0.001,0,0];
 
 elseif alphaSelect == 1
 %Random Alphas
-num_extra_alpha_real = 50;
+num_extra_alpha_real = 500;
 num_extra_alpha_hat = 0;
 ALPHA_real = [eye(m), [0.25;0.25;0.25;0.25],...
     normalize(rand(m, num_extra_alpha_real),1,'norm',1)];
-ALPHA_hat = [eye(m), [0.25;0.25;0.25;0.25],...
+ALPHA_hat = [(1/m)*ones(m,1),...[eye(m), [0.25;0.25;0.25;0.25],...
     normalize(rand(m, num_extra_alpha_hat),1,'norm',1)];
 
 elseif alphaSelect == 2
@@ -296,7 +316,7 @@ for idx_x_0 = 1:size(X_0,2)
                 R(k,:) = r;
                 X_data(k,:,idx_x_0,idx_real,idx_hat) = x;
                 X_hat_data(k,:,idx_x_0,idx_real,idx_hat) = x_hat;
-                R_data(:,:,idx_x_0,idx_real,idx_hat) = r;
+                R_data(k,:,idx_x_0,idx_real,idx_hat) = r;
 
 %                 % Error Calc Estimate
 %                 e_calc = x_0 - x_hat_0;
@@ -397,6 +417,30 @@ for idx_x_0 = 1:size(X_0,2)
     end
 end
 end
+
+
+%% Calcualte Z_k Statistic
+if calculate_Z_k
+    SigmaInv = eye(q);
+    Z_data = zeros(N, 1, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
+    for idx_x_0 = 1:size(X_0,2)
+        for idx_real = 1:size(ALPHA_real,2)
+            for idx_hat = 1:size(ALPHA_hat,2)
+                for k = 1:N
+                    Z_data(k, 1, idx_x_0, idx_real, idx_hat) = ...
+                        R_data(k,:,idx_x_0,idx_real,idx_hat) *...
+                        SigmaInv * ...
+                        R_data(k,:,idx_x_0,idx_real,idx_hat)';
+                end
+            end
+        end
+    end
+end
+
+
+
+
+
 %% All Residual Plot
 if plotAllResiduals
     figure('Position',[0,0,2.5e3,1.25e3])
@@ -498,7 +542,7 @@ if scatterPlot_x_k
 end
 
 %% 3D Scatter Plot of x_k for many A \in S
-if scatterPlot_x_k
+if scatterPlot3D_x_k
     idx_x_0 = 2;
     figure('Position',[0,0,9e2,1.3e3])
     sgtitle(['3D Scatter Plot of x_k with x_0 = [', ...
@@ -522,7 +566,7 @@ if scatterPlot_x_k
     zlabel('k')
     
     hold on
-%     X_data = zeros(N, n, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
+    
     % Randmoly generated ones
     X1 = zeros(N,m);
     X2 = zeros(N,m);
@@ -543,6 +587,45 @@ if scatterPlot_x_k
     zlabel('k')
 end
 
+
+%% z_k statistic scatter plot
+if scatterPlot_z_k
+    axes = [];
+    figure('Position',[0,0,9e2,1.3e3])
+    sgtitle(['Scatter Plot of z_k = r_k^T \Sigma^{-1} r_k'])
+    % Only plots for x_k(1) and x_k(2)
+    for idx_x_0 = 1:size(X_0,2)
+        K_all = zeros(N,size(ALPHA_real,2));
+        Z_all = zeros(N,size(ALPHA_real,2));
+        K_i = zeros(N,m);
+        Z_i = zeros(N,m);
+        for k = 1:N
+            K_all(k,:) = k * ones(1,size(ALPHA_real,2));
+            Z_all(k,:) = reshape(Z_data(k, 1, idx_x_0, :, 1),1,[]);
+            K_i(k,:) = k * ones(1,m);
+            Z_i(k,:) = reshape(Z_data(k,1,idx_x_0,1:m,1),1,[]);
+        end
+        K_all = reshape(K_all,1,[]);
+        Z_all = reshape(Z_all,1,[]);
+        K_i = reshape(K_i,1,[]);
+        Z_i = reshape(Z_i,1,[]);
+        
+        % was working on getting this to work.......
+        
+        
+        ax = subplot(size(X_0,2),1,idx_x_0);
+        axes = [axes, ax];
+        hold on
+        
+        %Plots
+        scatter(K_all,Z_all)
+        scatter(K_i,Z_i, 'r')
+        title(['x_0 = [', num2str(reshape(X_0(:,idx_x_0),1,[])), ']^T'])
+        xlabel('k')
+        ylabel('z_k')
+    end
+    linkaxes(axes,'xy')
+end
 
 
 %% Independent Sim
