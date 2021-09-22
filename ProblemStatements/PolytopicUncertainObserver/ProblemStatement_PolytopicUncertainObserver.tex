@@ -101,6 +101,8 @@ A state observer is designed using a simple Luemburger observer:
 where estimated $\hat{x}_k \in \real^n$ and estimated output $\hat{y}_k \in \real^q$.\\
 The estimated state matrix $\hat{A}$ is calculated as $\hat{A} = A(\hat{\alpha})$ 
 using the estimated parameter $\hat{\alpha} \in \mathcal{A}$.\\
+
+\subsection{Observer Gain Calcualtion}
 The observer gain matrix $L$ is designed so that regardless of the 
 actual system matrix the observer is stable:
 \begin{equation}\label{eq:L_requirments}
@@ -109,18 +111,28 @@ actual system matrix the observer is stable:
         \qty(A(\alpha) - L C) \ \text{stable} \ \forall \alpha \in \mathcal{A}}
 \end{equation}
 Alternativly, using polytopic methods, $L$ can be defined to satisfy each of the polytopic 
-vertices and therefore satisfy it for all potential matrices in the polytope. 
-\textbf{Include proof? in problem statement? nah}\\
+vertices and therefore satisfy it for all potential matrices in the polytope.
+\begin{theorem}
+    The feasable region of $L$ is when the following LMIs as satisfied:
+    \begin{equation}\label{eq:L_feasable_LMIs}
+        \mqty[
+            Q &(Q A_i + X C)^T\\
+            (Q A_i + X C) & Q
+            ] \succeq 0, \ \forall i = 1, \dots, m
+    \end{equation}
+    where $Q \in \{Q \in \real^{n \cross n} \ | \ Q \succeq 0\}$, $X \in \real^{n \cross p}$, 
+    and $L$ is calculated as $L = Q^{-1} X$.
+\end{theorem}
 
-The feasable region of $L$ is when the following LMIs as satisfied:
-\begin{equation}\label{eq:L_feasable_LMIs}
-    \mqty[
-        Q &(Q A_i + X C)^T\\
-        (Q A_i + X C) & Q
-        ] \succeq 0, \ \forall i = 1, \dots, m
-\end{equation}
-where $Q \in \{Q \in \real^{n \cross n} \ | \ Q \succeq 0\}$, $X \in \real^{n \cross p}$, 
-and $L$ is calculated as $L = Q^{-1} X$.
+\begin{proof}
+    \textbf{Include this proof... nah... mabye just reference boyd (or include anyway)}
+\end{proof}
+
+\subsection{Controller?}
+Design a controller into it? Is it actually needed for this or can the 
+$A=A+BK$, $A_i = A_i + Bk$, and $\hat{A} \approx \qty(A+BK)$ with just 'no loss of generality'?\\
+My guess is yes becouse although the controller may be affected, 
+the input and measured output are knonw so (when proved for $A,A_i,\hat{A}$) it imnplies generality
 
 \section{Residual Bounding}
 \subsection{Residual Definition}

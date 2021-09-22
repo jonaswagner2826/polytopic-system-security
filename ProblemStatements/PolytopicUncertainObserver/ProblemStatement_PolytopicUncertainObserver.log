@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021/W32TeX) (preloaded format=pdflatex 2021.9.1)  21 SEP 2021 23:28
+This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021/W32TeX) (preloaded format=pdflatex 2021.9.1)  21 SEP 2021 23:44
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -479,37 +479,37 @@ Underfull \hbox (badness 10000) in paragraph at lines 88--91
 
  []
 
-[1
 
-{c:/texlive/2021/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-Underfull \hbox (badness 10000) in paragraph at lines 110--114
+Underfull \hbox (badness 10000) in paragraph at lines 100--104
 
  []
 
-[2] [3] [4
+[1
+
+{c:/texlive/2021/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2] [3] [4
 
 ]
-Underfull \hbox (badness 10000) in paragraph at lines 416--429
+Underfull \hbox (badness 10000) in paragraph at lines 428--441
 
  []
 
 [5] (./ProblemStatement_PolytopicUncertainObserver.aux)
 Package rerunfilecheck Info: File `ProblemStatement_PolytopicUncertainObserver.out' has not changed.
-(rerunfilecheck)             Checksum: D74C6E0592C4B5ED9E3C2AF7A3FDA983;2332.
+(rerunfilecheck)             Checksum: B1401C6654BCFEE9F6EE9E23222D7BE2;2634.
  ) 
 Here is how much of TeX's memory you used:
- 13193 strings out of 478599
- 191191 string characters out of 5858102
- 527757 words of memory out of 5000000
- 30845 multiletter control sequences out of 15000+600000
+ 13198 strings out of 478599
+ 191260 string characters out of 5858102
+ 527754 words of memory out of 5000000
+ 30847 multiletter control sequences out of 15000+600000
  414088 words of font info for 67 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 71i,9n,81p,785b,341s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 71i,9n,81p,785b,435s stack positions out of 5000i,500n,10000p,200000b,80000s
 <c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmbsy7.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb><c:/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on ProblemStatement_PolytopicUncertainObserver.pdf (5 pages, 185748 bytes).
+Output written on ProblemStatement_PolytopicUncertainObserver.pdf (5 pages, 191015 bytes).
 PDF statistics:
- 201 PDF objects out of 1000 (max. 8388607)
- 162 compressed objects within 2 object streams
- 43 named destinations out of 1000 (max. 500000)
- 121 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 210 PDF objects out of 1000 (max. 8388607)
+ 171 compressed objects within 2 object streams
+ 46 named destinations out of 1000 (max. 500000)
+ 137 words of extra memory for PDF output out of 10000 (max. 10000000)
 
