@@ -1,0 +1,427 @@
+\documentclass[]{article}
+
+
+\usepackage[margin=1in]{geometry}
+\usepackage{physics}
+\usepackage{amsmath, amsfonts, amssymb, amsthm}
+\usepackage{nccmath}
+\usepackage{cuted}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{empheq}
+\usepackage{graphicx}
+
+% MATLAB Formating Code
+\usepackage[numbered,framed]{matlab-prettifier}
+\lstset{style=Matlab-editor,columns=fullflexible}
+\renewcommand{\lstlistingname}{Script}
+\newcommand{\scriptname}{\lstlistingname}
+
+% Theorem numebring and things
+\newtheorem{assumption}{Assumption}
+\newtheorem{theorem}{Theorem}
+
+
+%opening
+\title{Problem Statement:\\
+Detector Designed from Vertices of Polytopic System}
+\author{Jonas Wagner}
+\date{2021 September 21}
+
+\begin{document}
+
+\maketitle
+%
+%Note: See the (\href{https://cometmail-my.sharepoint.com/personal/jrw200000_utdallas_edu/_layouts/OneNote.aspx?id=%2Fpersonal%2Fjrw200000_utdallas_edu%2FDocuments%2FResearch%2FPolytopic%20System%20Security%2FPolytopic%20System%20Security&wd=target%28L-Observer%20Residual%20Bounds.one%7C96625950-A6A9-4A54-B35B-46969BCD56B2%2FProblem.%20Statement%7C43940B17-ACF8-4A2E-A2D8-259E68EF4028%2F%29}{OneNote problem statement page})
+%for additional info. (hopefully that link works... idk how well OneNote will integrate as pdf references or GitHub)
+%%%% Yeah it doesn't work...
+
+
+%starting from scratch...
+
+\section{System Definition}
+\subsection{Plant Definition}
+The system to be controlled (the plant) will be defined with a standard LTI system:
+\begin{equation}\label{eq:plant_def}
+    \mathcal{S}_{plant} :=
+    \begin{cases}
+        x_{k+1} = A x_k + B u_k\\
+        y_{k} = C x_k + D u_k
+    \end{cases}
+\end{equation}
+where actual state $x_k \in \real^n$, control input $u_k \in \real^p$, 
+and output $y_k \in \real^q$. 
+The state matrices $A$, $B$, $C$, and $D$ fully define the dynamics of the system.\\
+
+\subsection{System Uncertainty}
+It is known that $A$ is within a polyotopic set of state matrices, 
+$\{A_i : \forall i = 1,\dots,m\}$, calculated as $A = A(\alpha)$.\\
+\begin{equation}\label{eq:}
+    A(\alpha) := \sum_i^m \alpha^{(i)} A_i
+\end{equation}
+where $\alpha \in \mathcal{A}$
+\begin{equation}\label{eq:alpha_set}
+	\mathcal{A} = 
+        \qty{
+            \alpha\in \real^m \ : \ 
+            \sum_{i=1}^m \alpha^{(i)} = 1, \
+            \alpha^{(i)}\geq 0 \ \forall \ i \in \qty{1,2,\dots,m}
+        }
+\end{equation}
+
+The following assumptions are also known about the system:
+\begin{assumption}\label{asmp:controllable}
+    $(A_i, B)$ is controllable $\forall i = \{1, \dots, m\}$
+\end{assumption}
+\begin{assumption}\label{asmp:observable}
+    $(A_i, C)$ is observable $\forall i = \{1, \dots, m\}$
+\end{assumption}
+
+\subsection{Individual Subsystems}
+Each individual subsystem can be considered individually with
+\begin{equation}\label{eq:subsys_def}
+    \mathcal{S}^{(i)} :=
+    \begin{cases}
+        x_{k+1}^{(i)} = A_i x_k^{(i)} + B u_k\\
+        y_{k}^{(i)} = C x_k^{(i)} + D u_k
+    \end{cases}
+\end{equation}
+where subsystem state $x_k^{(i)} \in \real^n$ 
+and estimated output $y_k^{(i)} \in \real^q$.\\
+
+\subsection{State Observer}
+A state observer is designed using a simple Luemburger observer:
+\begin{equation}\label{eq:obsv_def}
+    \mathcal{S}_{obsv} :=
+    \begin{cases}
+        \hat{x}_{k+1} = \hat{A} \hat{x}_k + B u_k + L(y_k - \hat{y}_k)\\
+        \hat{y}_k = C \hat{x}_k + D u_k
+    \end{cases}
+\end{equation}
+where estimated $\hat{x}_k \in \real^n$ and estimated output $\hat{y}_k \in \real^q$.\\
+The estimated state matrix $\hat{A}$ is calculated as $\hat{A} = A(\hat{\alpha})$ 
+using the estimated parameter $\hat{\alpha} \in \mathcal{A}$.\\
+The observer gain matrix $L$ is designed so that regardless of the 
+actual system matrix the observer is stable:
+\begin{equation}\label{eq:L_requirments}
+    L \in 
+    \qty{L \in \real^{n \cross q} \ | \
+        \qty(A(\alpha) - L C) \ \text{stable} \ \forall \alpha \in \mathcal{A}}
+\end{equation}
+Alternativly, using polytopic methods, $L$ can be defined to satisfy each of the polytopic 
+vertices and therefore satisfy it for all potential matrices in the polytope. 
+\textbf{Include proof? in problem statement? nah}\\
+
+The feasable region of $L$ is when the following LMIs as satisfied:
+\begin{equation}\label{eq:L_feasable_LMIs}
+    \mqty[
+        Q &(Q A_i + X C)^T\\
+        (Q A_i + X C) & Q
+        ] \succeq 0, \ \forall i = 1, \dots, m
+\end{equation}
+where $Q \in \{Q \in \real^{n \cross n} \ | \ Q \succeq 0\}$, $X \in \real^{n \cross p}$, 
+and $L$ is calculated as $L = Q^{-1} X$.
+
+\section{Residual Bounding}
+The residual, $r_k$, is defined by
+\begin{equation}\label{eq:r_k_def}
+    r_k := y_k - \hat{y}_k
+\end{equation}
+
+Additionally, we define associated residuals comparing the observer to each of the 
+individual subsystems, $r_k^{(i)}$, as
+\begin{equation}
+    r_k^{(i)} := y_k^{(i)} - \hat{y}_k
+\end{equation}
+
+A test statistic, $z_k$, is then defined as
+\begin{equation}\label{eq:z_k_def}
+    z_k := r_k^T \Sigma^{-1} r_k
+\end{equation}
+where $\Sigma$ is designed to be the covariance matrix of the expected residual. 
+Similarly, the test statistic for each subsystem residuals is defined as
+\begin{equation}
+    z_k^{(i)} = (r_k^{(i)})^T \Sigma^{-1} r_k^{(i)}  
+\end{equation}
+A maximum test statisic, $z_k^*$, can then be calculated as
+\begin{equation}
+    z_k^* := \max_i z_k^{(i)}
+\end{equation}
+
+\begin{theorem}
+    The actual system test statistic, $z_k$, is bounded from above by the maximum 
+    test statistic for each of the other subsystem, $z_k^*$.
+    \begin{equation}
+        z_k \leq z_k^*, \ \forall k \geq 0
+    \end{equation}
+\end{theorem}
+
+\begin{proof}
+    \textbf{Put the proof of this thing....}\\
+    Should be based on the explicit def of it...
+\end{proof}
+
+\section{Detector Design}
+A detector will be designed to compare the residual potentially caused from the observer 
+to simulated systems at each vertice of the polytope.
+
+\subsection{Detector Alarm}
+The detector then sounds an alarm acording to the following rule:
+\begin{equation}\label{eq:detector_alarm_rule}
+    \begin{cases}
+        z_k < z_k^*     &\text{no alarm}\\
+        z_k \geq z_k^*  &\text{alarm}
+    \end{cases}
+\end{equation}
+
+
+
+%%%%%%%%%%%%%%%%%%
+%	I don't think these things are really important for this problem statement
+%%%%%%%%%%%%%%%%%%%
+%\begin{abstract}
+%
+%	In this project they dynamics of Discrete-Time Polytopic Linear Parameter-Varying (LPV) Systems will be examined. Specifically, various methods for the dual state and parameter estimation will be reproduced with the intent of analyzing effectiveness of these observers against various attacks. Each method performs optimization to minimize the estimation error in various ways while remaining stable and achieving certain performance criteria. Potentially the reachability of the system may be determined for various fault and attack scenarios through the minimization of an ellipsoidal bound.
+%\end{abstract}
+
+%
+%\newpage
+%\tableofcontents
+
+
+%\newpage
+
+%%%%%%%%%%%%%%%%%%
+% Overdetailed explination.... (putting in appendix beocuse why not....)
+%%%%%%%%%%%%%%%%%%%
+
+% \section{Polytopic Systems Background}
+% (A detailed walkthrough is in \appendixname \ \ref{apx:PolytopicSystemsBackround})
+
+% \subsection{Discrete Time Polytopic Model}
+% A standard DT-Polytopic system will be used in this project, as given as:
+
+% %old def
+% % \begin{equation}\label{eq:DT_poly_sys_def}
+% % 	\begin{cases}
+% % 		x_{k+1} &= \sum_{i=1}^{m} \alpha^i (A_i x_k + B_i u_k)\\
+% % 		y		&= C x_k
+% % 	\end{cases}
+% % \end{equation}
+
+% \begin{equation}\label{eq:DT_poly_sys_def}
+%     \begin{cases}
+%         x_{k+1} &= \sum_{i=1}^{m} \alpha^i (A_i x_k + B_i u_k)\\
+%         y		&= C x_k
+%     \end{cases}
+% \end{equation}
+% with state variable $x \in \real^n$, control input $u \in \real^p$, and output $y \in \real^q$ common to all of the $m$ submodels. Each submodel is also associated with state matricies $A_i$ and $B_i$ while the output is calculated from the actual state by matrix $C$.
+
+% The scheduling parameter, $\alpha \in \mathcal{A}$ is unknown and time-varying, with $\mathbf{A}$ defined as:
+% \begin{equation}\label{eq:alpha_set}
+% 	\mathcal{A} = \{\alpha\in \real^m \ | \ \sum_{i=1}^m \alpha^i = 1, \ \alpha^i \geq 0 \ \ \forall \ i \in \{1,2,\dots,m\}\}
+% \end{equation}
+% %notes on dimensions: n = states, m = inputs, p = outputs, N = # of subsystems
+
+
+% \subsection{Assumptions}
+% The following assumptions will also be made:
+
+% \begin{enumerate}
+% 	\item $A_i$ is stable $\forall \ i = 1, \dots, m$
+% 	\item $(A_i, B_i)$ is a controllable pair $\forall \ i = 1, \dots, m$
+% 	\item $(A_i, C)$ is an observable pair $\forall \ i = 1, \dots, m$
+% 	\item $\alpha \in \mathcal{A}$ is constant (or at least slowly time-varying)
+% \end{enumerate}
+
+
+% \newpage
+% \section{State Observer and Residual Definition}
+% The polytopic system described in \eqref{eq:DT_poly_sys_def} \ for assumed scheduling parameters $\alpha^i$, a State Observer can be designed to estimate the state of the system from the known inputs and outputs.\\
+
+% \subsection{Simple Luenberger Observer}
+% A simple Luenberger Observer for system matrices A, B, and C is defined as
+% \begin{equation}\label{eq:simple_L_Observer}
+% 	\hat{x}_{k+1} = A \hat{x}_k + B_i u_k + L \qty(C \hat{x}_k - y_k)
+% \end{equation}
+% where $L \in \real^{n \cross q}$ is the Luemburger gain.
+
+% \subsection{Polytopic System Luenburger Observer}
+% For a Polytopic System given with \eqref{eq:DT_poly_sys_def} \ with known (or estimated) scheduling parameters $\hat{\alpha} \in \mathcal{A}$\footnote{which technically may not need to be restricted to be within $\mathcal{A}$}, a Luenberger Observer can be defined by:
+% \begin{equation}\label{eq:DT_poly_l_observer}
+% 	\hat{x}_{k+1} = \sum_{i=1}^m \hat{\alpha}^i \qty(A_i \hat{x}_k + B_i u_k + L_i \qty(y_k - C \hat{x}_k))
+% \end{equation}
+% with $L_i$ designed so that $(A_i - L_i C)$ is stable $\forall i = 1 \dots m$.\footnote{might be useful to also specify $L_i$ specifically based on the LMI from the paper... $L_i = G_i^{-1} F_i$}
+
+% \subsection{State Estimation Error}
+% In a deterministic system, let the actual scheduling parameters be defined as ${\alpha}\in \mathcal{A}$ and a single selected scheduling parameter of the system be defined as $\alpha \in \mathcal{A}$. The state-estimation error is then defined by
+% \begin{equation}\label{eq:est_error_def}
+% 	e_k =x_k - \hat{x}_k 
+% \end{equation}
+% where $x_k$ is the actual state and $\hat{x}_k$ is the estimated state.
+
+% The estimation error update equation can then be calculated to be:
+% \begin{equation}\label{eq:est_error_update_def}
+% 	e_{k+1} = \sum_{i=1}^{m} \hat{\alpha}^i \qty(A_i - L_i C) e_k + v_k^i
+% \end{equation}
+% where the disturbance term $v_k^i$ is defined by
+% \begin{equation}\label{eq:param_error_disturbance_def}
+% 	v_k^i = \qty({\alpha}^i - \hat{\alpha}^i) \qty(A_i x_k + B_i u_k)
+% \end{equation}
+
+% \textbf{Prove BIBS (and/or ISS?) for $v_k$ assuming that conditions exist that $v_k$ is bounded...} (should be simple to expand from standard DT to polytopic system)
+
+% %\textbf{Related Question:} Since $\hat{\alpha}_k$ will be constant, ${\alpha}_k - \hat{\alpha}_k$ but does that mean $v_k$ will never decay to zero? and if so, will it at least remain bounded (under certain conditions for $A_i$ and $B_i$)?\\
+% %\textbf{Solution:}... $v_k$ is never bounded if $B_i$ is actually polytopic... $v_k$ is also not bounded if $x_k$ itself is fully reachable (it probably needs stabilizing controller)...
+
+% \subsection{Output Residual Definition}
+% The measured output $y_k = C x_k$ and estimated output $\hat{y}_k = C \hat{x}_k$ are used to define the residual, $r_k$ as:
+% \begin{equation}\label{eq:output_residual_def}
+% 	r_k = y_k - \hat{y}_k = C(x_k - \hat{x}_k) = C e_k
+% \end{equation}
+
+% %The output residual update equation can be calculated from \eqref{eq:DT_poly_l_observer} and \eqref{eq:output_residual_def} to be:
+% %\begin{equation}\label{eq:output_residual_update_def}
+% %	r_{k+1} = \sum_{i=1}^k \hat{\alpha}^i \qty(A_i - L_i C) r_k + C v_k
+% %\end{equation}
+
+
+% \subsection{Feedback Control Implementation}
+% As is evident in \eqref{eq:param_error_disturbance_def}, when $\alpha^i \neq \hat{\alpha}^i$ the disturbance term is not bounded and therefore the error (and residual) itself is not bounded... when a feedback controller is implimented as well, this may be possible...
+
+% Let, ...
+
+
+
+% \newpage
+% \section{Problem Objectives}
+% \begin{enumerate}
+% 	\setcounter{enumi}{-1} % make it start at a 0
+% 	\item Simulate using a toy system to gain intuition for bounds on the residual using the simple SISO system w/ a static system scheduling parameter (${\alpha}$) and no noise (deterministic).
+% 	\item For a deterministic DT-polytopic system, calculate an ellipsoid bound on the residual, assuming $r_k \sim \mathcal{N}(0,\Sigma)$, meaning a test statistic is defined by
+% 	$$z_k = r_k^T \Sigma^{-1} r_k \leq z_{threshold}$$
+% 	so that the threshold $z_{threshold}$ can be defined as the reachable residual for a specific set of scheduling parameters: $\hat{\alpha} \in \mathcal{A} \neq {\alpha} \in \mathcal{A}$.
+% 	\item Attempt to use the bounds for scheduling parameters for any ${\alpha}\in \mathcal{A}$ to find the worst case scenarios for a given $\hat{\alpha}$.
+% 	\item Find a way to calculate the minimum bounded region $\forall {\alpha} \in \mathcal{A}$ by selecting the best $\hat{\alpha}$ that minimizes the size of the bounded region.
+% 	\item Confirm the analysis with simulations with the toy model, as well as, more interesting higher-order and MIMO systems.
+% 	\begin{enumerate}
+% 		\item Test with noise to ensure robustness of the estimates (and potentially robustness to stealthy/unstealthy attacks)
+% 		\item Mabye: Run a lot of simulations to experimentally find regions where it is vulnerable (i.e. find what is contained within the ellipsoidal bound but not actually reachable)
+% 	\end{enumerate}
+% \end{enumerate}
+
+
+%
+%
+%\newpage
+%\section{Project Objectives}
+%The primary objective of this project will be to reproduce three joint state and parameter estimator methods for LPV systems then test the ability of each to react to malicious input and measurement interference. A secondary/future objective will be to calculate the reachability set and how it is manipulated due to an attack on the system.
+%
+%The three estimation methods of interest \footnote{taken directly from \cite{beelen2017joint} and we are essentially recreating these results but performing additional tests} include:
+%\begin{enumerate}
+%	\item Dual-Estimation (DE) approach is a method that first solves a two step optimization problem for parameters-estimation and then uses a "traditional" robust polytopic observer design for state estimation. \cite{beelen2017joint}
+%	\item Extended Kalman Filter (EKF) using prediction and update steps for the system estimates, but this version does require the assumption of Gaussian noise. \cite{beelen2017joint}
+%	\item Interacting Multiple Model estimation (IMM) method which uses a different Kalmen filter for multiple modes and the probability that the system will be a certain mode.\cite{bar2004estimation}
+%\end{enumerate}
+% Need to find access to \cite{bar2004estimation} for the IMM algorithm details...
+
+%The primary attack methods for initial testing (for simplicity) will consist of malicious random gaussian noise being added to measurements. The power of these attacks can be classified into three catagories depending on the malicous noise power:
+%\begin{enumerate}
+%	\item Stealthy attacks: power of the attack is along the same level as the normal noise standard-deviation.
+%	\item Unstealthy attacks: the attack is disruptive, yet detectable, with aims to degrade the system performance.
+%	\item Super Unstealthy attack: a very considerable attack that aims to severely disrupt a system while not remaining undetectable.
+%\end{enumerate}
+%
+%The next objective will be to show how much each attack method can effect the states (specifically the reachable set) for each estimator.\footnote{and potentially develop a better solution... modifying \cite{securestateestimation}?} This work is very similar to \cite{hashemi2018comparison} but will be expanding from stochastic DT-LTI systems to deterministic DT-LPV systems.
+%
+%\section{Proposed Methods}
+%The following steps will be taken to complete the problem.
+%
+%\begin{enumerate}
+%	\item This project will begin by reproducing the results of joint state and parameter estimation from \cite{beelen2017joint} using the same LPV system used in the paper. (This will likely be done using Simulink with custom estimator blocks.)
+%%	\item The next step will be to introduce additional system noise (presumably to the scheduling parameters themselves) and measurement poise into the sensors. This will be important to do first and perform a separate analysis of each before malicious attacks are included.
+%	\item Next attacks will be introduced into the sensor and the response for each estimator will be compared.
+%	\item This will then be expanded to a more interesting system\footnote{Seperator Testbed? scheduling parameters being valve on/off and for various linearized tank level systems... is it possible to analyze with a scheduling parameter dependent on a state???... Otherwise a more complicated electrical network w/ switches or pneumatic system could be done instead} that will be more useful for sensor attack testing (i.e. more sensors then states or high noise system).
+%	\item Finally, an analysis of the reachable set deviation due to attacks will be performed by finding a minimal ellipsoid constraining the states that would be reachable prior to attack detection.\footnote{possibly future work}
+%\end{enumerate}
+
+%\newpage
+%\bibliographystyle{ieeetr}
+%\bibliography{mybib.bib}
+
+
+
+\onecolumn
+\newpage
+\appendix
+\section{In-Depth Polytopic System Backround} \label{apx:PolytopicSystemsBackround}
+Polytopic LPV system models are essentially a smooth interpolation of a set of LTI submodels constructed using a specified weighting function. This can be looked at as decomposing a system into multiple operating spaces that operate as linear submodels. It is possibile for a Polytopic model to take a complex nonlinear model and redefine it as a time-varying interpolation of multiple linear submodels.
+
+Section references:\footnote{Each subsection is mostly a summary of sections from these sources but with elaboration and consistent notation.}
+% \cite{beelen2017joint} \cite{ORJUELA2019295} \cite{orjuela2013nonlinear}\\
+
+\subsection{General Continuous Time Polytopic Model} 
+The simple polyotopic LPV structure can be described by the following weighted linear combination of LTI submodels:
+\begin{equation}\label{eq:CT_poly_sys_def}
+	\begin{cases}
+		\dot{x}(t) 	= \sum_{i=1}^r \mu_i(\xi(t))\{A_i x(t) + B_i u(t)\}  \vspace{5pt} \\ 
+		y(t)		= \sum_{i=1}^r \mu_i(\xi(t)) C_i x(t)
+	\end{cases}
+\end{equation}
+with state variable $x \in \real^n$ common to all $r$ submodels, control input $u \in \real^p$, output $y \in \real^q$, weighting function $\mu_i(\cdot)$ and premise variable $\xi(t) \in \real^{w}$. 
+
+Additionally, the weighting functions $\mu_i (\cdot)$ for each subsystem must satisfy the convex sum constraints:
+\begin{equation}\label{eq:convex_sum_constraints}
+	0 \leq \mu_i(\xi), \ \forall i = 1,\dots,r \ \ \text{and} \ \ \sum_{i=1} \mu_i(\xi) = 1
+\end{equation}
+
+%notes on dimensions: n = states, m = inputs, p = outputs, w = # of weights, r = # of subsystems
+
+One notable downside, for our application, is the requirement for $\xi(t)$ to be explicitly known in real-time for the model to function. This requirement is the primary driving factor in investigating this system as when $\xi(t)$ is not explicitly known additional uncertainties now exist in a system that are open for exploitation by an attacker.
+
+
+\subsection{Discrete Time Polytopic Model}
+In the DT-Polytopic Model the CT-Polytopic Model, \eqref{eq:CT_poly_sys_def}, is extended into the discrete time equivalence (either through sampling and zero-order holds or by definition) by the following parameter-varying system:
+
+\begin{equation}
+	\begin{cases}
+		x_{k+1} &= \sum_{i=1}^{m} \alpha^i (A_i x_k + B_i u_k)\\
+		y		&= C x_k
+	\end{cases}
+\end{equation}
+with state variable $x \in \real^n$, control input $u \in \real^p$, and output $y \in \real^q$ common to all of the $m$ submodels. Each submodel is also associated with state matricies $A_i$ and $B_i$ while the output is calculated from the actual state by matrix $C$.
+
+The scheduling parameter, $\alpha \in \mathcal{A}$ is unknown and time-varying, with $\mathbf{A}$ defined as:
+\begin{equation}
+	\mathcal{A} = \{\alpha\in \real^m \ | \ \sum_{i=1}^m \alpha^i = 1, \ \alpha^i \geq 0 \ \ \forall \ i \in \{1,2,\dots,m\}\}
+\end{equation}
+%notes on dimensions: n = states, m = inputs, p = outputs, N = # of subsystems
+
+In the discrete time case, the unknown scheduling parameter, $\alpha$, is problematic for when developing a state-estimator, thus a Joint State-Parameter estimator must be used. The discrete nature of the measurements may also prove to be even more problematic if an attack is injected in any discrete measurement.
+
+
+
+
+
+
+
+
+
+
+
+\newpage
+\subsection{MATLAB}\label{apx:MATLAB}
+All code I wrote for this project can be found on my GitHub repository:\\
+\href{https://github.com/jonaswagner2826/polytopic-system-security}{https://github.com/jonaswagner2826/polytopic-system-security}\\
+%% DT_LPV_sim_script
+%\lstinputlisting[caption={DT\_LPV\_sim\_script}]{../../DT_LPV_sim/DT_LPV_sim_script.m}
+%\newpage
+%% DT_LPV_sim_script
+%\lstinputlisting[caption={alpha\_traj}]{../../DT_LPV_sim/alpha_traj.m}
+%\newpage
+%% DT_LPV_sim_script
+%\lstinputlisting[caption={est\_DE}]{../../DT_LPV_sim/est_DE.m}
+%\newpage
+%% DT_LPV_sim_script
+%\lstinputlisting[caption={est\_EKF}]{../../DT_LPV_sim/est_EKF.m}
+\end{document}

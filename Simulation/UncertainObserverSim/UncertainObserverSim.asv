@@ -7,12 +7,12 @@ close all
 
 %% Sim Settings
 % Sim Parameters
-N = 20;
+N = 10;
 
 % Selection
 sysSelect = 4;
-alphaSelect = 2; %0 = single set, 1 = random alphas, 2 = random edge alphas
-
+alphaSelect = 1; %0 = single set, 1 = random alphas, 2 = random edge alphas
+x0Select = 2;
 
 testCtrb = false;
 testObsv = false;
@@ -27,15 +27,27 @@ plotAllResiduals = false;
 plotResidualStatistics = false;
 scatterPlot_x_k = false;
 scatterPlot3D_x_k = false;
-scatterPlot_z_k = true;
+scatterPlot3D_e_k = false;
+scatterPlot_z_k = false;
+scatterPlot3D_z_k = false;
+scatterPlot_z_k_i = true;
 
-
-% Calcualte Z_k
+% Dependent Booleans
 if scatterPlot_z_k
     calculate_Z_k = true;
+elseif scatterPlot3D_z_k
+    calculate_Z_k = true;
+else
+    calculate_Z_k = false;
 end
 
-
+if scatterPlot_z_k_i
+    calculate_R_k_i = true;
+    calculate_Z_k_i = true;
+else
+    calculate_R_k_i = true;
+    calculate_Z_k_i = true;
+end
 
 % System Selection
 if sysSelect == 1
@@ -116,7 +128,6 @@ if testObsv
     end
 end
 
-
 % Parameter Definition
 %Single Set
 if alphaSelect == 0
@@ -126,11 +137,11 @@ Alpha_hat = [0.999,0.001,0,0];
 
 elseif alphaSelect == 1
 %Random Alphas
-num_extra_alpha_real = 50;
+num_extra_alpha_real = 500;
 num_extra_alpha_hat = 0;
 ALPHA_real = [eye(m), [0.25;0.25;0.25;0.25],...
     normalize(rand(m, num_extra_alpha_real),1,'norm',1)];
-ALPHA_hat = [eye(m), [0.25;0.25;0.25;0.25],...
+ALPHA_hat = [(1/m)*ones(m,1),...[eye(m), [0.25;0.25;0.25;0.25],...
     normalize(rand(m, num_extra_alpha_hat),1,'norm',1)];
 
 elseif alphaSelect == 2
@@ -158,18 +169,12 @@ for idx = nchoosek(1:m,2)'
 end
 end
 
-
-
-
 % Initial Conditions
 %multiple I.C.s
 X_0_mag = [1];
-X_0_theta = [0, pi/4, pi/2, 3*pi/4, pi];
+X_0_theta = [0, pi/4];%, pi/2, 3*pi/4, pi];
 X_0 = round(X_0_mag * [cos(X_0_theta); sin(X_0_theta)],2);
 X_hat_0 = X_0;
-
-
-
 
 % CVX Designing
 % % Control Design: u = K * x_hat
@@ -188,7 +193,6 @@ X_hat_0 = X_0;
 % cvx_end
 % 
 % K = Q * inv(P)
-
 
 % Observer Design: x_hat = A_hat * x_hat + B * u + L * (y - y_hat)
 cvx_begin sdp quiet
@@ -229,10 +233,13 @@ if runSim
 % Save Data
 X_data = zeros(N, n, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
 X_hat_data = zeros(N, n, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
+Y_data = zeros(N, q, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
+E_data = zeros(N, n, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
 R_data = zeros(N, q, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
 
 A_real_data = zeros(n,n,size(ALPHA_real,2),size(ALPHA_hat,2));
 A_hat_data = zeros(n,n,size(ALPHA_real,2),size(ALPHA_hat,2));
+
 % Initial Conditions loop
 for idx_x_0 = 1:size(X_0,2)
     x_0 = X_0(:,idx_x_0);
@@ -284,15 +291,15 @@ for idx_x_0 = 1:size(X_0,2)
                 % Control
                 u = 0; % No Input
 
-%                 % Error Calc 2(recursive)
-%                 %e_k = Delta_A * x_{k-1} + (A_hat - L*C) * e_{k-1};
-%                 e_calc_2 = Delta_A * x_hat + (Delta_A + A_hat - L*C) * e_calc_2;
-%                 E_calc_2(k,:) = e_calc_2;
+%                 % Error Calc 2(recursive) %e_k = Delta_A * x_{k-1} +
+%                 (A_hat - L*C) * e_{k-1}; e_calc_2 = Delta_A * x_hat +
+%                 (Delta_A + A_hat - L*C) * e_calc_2; E_calc_2(k,:) =
+%                 e_calc_2;
 % 
-%                 % Error norm cal 2 (recursive)
-%                 %\norm{e_k} \leq \delta * \norm{\hat{x}_{k-1}} + (\delta +
-%                 %\norm{\hat{A} - LC}) \norm{e_{k-1}}
-%                 e_norm_calc_2 = delta * norm(x_hat) + (delta + norm(A_hat - L*C)) * e_norm_calc_2;
+%                 % Error norm cal 2 (recursive) %\norm{e_k} \leq \delta *
+%                 \norm{\hat{x}_{k-1}} + (\delta + %\norm{\hat{A} - LC})
+%                 \norm{e_{k-1}} e_norm_calc_2 = delta * norm(x_hat) +
+%                 (delta + norm(A_hat - L*C)) * e_norm_calc_2;
 %                 E_norm_calc_2(k,:) = e_norm_calc_2;
 
                 % Update Eqs
@@ -316,6 +323,8 @@ for idx_x_0 = 1:size(X_0,2)
                 R(k,:) = r;
                 X_data(k,:,idx_x_0,idx_real,idx_hat) = x;
                 X_hat_data(k,:,idx_x_0,idx_real,idx_hat) = x_hat;
+                Y_data(k,:,idx_x_0,idx_real,idx_hat) = y;
+                E_data(k,:,idx_x_0,idx_real,idx_hat) = e;
                 R_data(k,:,idx_x_0,idx_real,idx_hat) = r;
 
 %                 % Error Calc Estimate
@@ -394,7 +403,6 @@ for idx_x_0 = 1:size(X_0,2)
             title('Error Norm Calc & Bound % Error')
             legend('Sum of Norms Error','Closed-Form Bound Error')
             end
-
             % Additional figures
             if false
             figure
@@ -408,7 +416,6 @@ for idx_x_0 = 1:size(X_0,2)
             title('% Error of Actual vs Calculated Error 2')
             legend('X_1', 'X_2')
             end
-
 %             % Save Data
 %             X_data(:,:,idx_x_0,idx_real,idx_hat) = X;
 %             X_data(:,:,idx_x_0,idx_real,idx_hat) = X_hat;
@@ -421,7 +428,9 @@ end
 
 %% Calcualte Z_k Statistic
 if calculate_Z_k
-    SigmaInv = eye(q);
+    if exist('SigmaInv', 'var') ~= 1
+        SigmaInv = eye(q);
+    end
     Z_data = zeros(N, 1, size(X_0,2), size(ALPHA_real,2), size(ALPHA_hat,2));
     for idx_x_0 = 1:size(X_0,2)
         for idx_real = 1:size(ALPHA_real,2)
@@ -437,8 +446,44 @@ if calculate_Z_k
     end
 end
 
+%% Calcualte r_k_i
+if calculate_R_k_i
+    if exist('SigmaInv', 'var') ~= 1
+        SigmaInv = eye(q);
+    end
+    R_i_data = zeros(N, q, size(X_0,2), size(ALPHA_real,2), m);
+    for idx_x_0 = 1:size(X_0,2)
+        for idx_real = 1:size(ALPHA_real,2)
+            for idx_i = 1:m
+                for k = 1:N
+                    R_i_data(k, :, idx_x_0, idx_real,idx_i) = ...
+                        C*X_data(k,:,idx_x_0,idx_real,1) - ...
+                        C*X_hat_data(k,:,idx_x_0,idx_i,1);
+                end
+            end
+        end
+    end
+end
 
-
+%% Calcualte Z_k_i Statistic
+if calculate_Z_k_i
+    if exist('SigmaInv', 'var') ~= 1
+        SigmaInv = eye(q);
+    end
+    Z_i_data = zeros(N, 1, size(X_0,2), size(ALPHA_real,2), m);
+    for idx_x_0 = 1:size(X_0,2)
+        for idx_real = 1:size(ALPHA_real,2)
+            for idx_m = 1:m
+                for k = 1:N
+                    Z_i_data(k, 1, idx_x_0, idx_real, idx_m) = ...
+                        R_i_data(k,:,idx_x_0,idx_real,idx_m) *...
+                        SigmaInv * ...
+                        R_i_data(k,:,idx_x_0,idx_real,idx_m)';
+                end
+            end
+        end
+    end
+end
 
 
 %% All Residual Plot
@@ -543,7 +588,7 @@ end
 
 %% 3D Scatter Plot of x_k for many A \in S
 if scatterPlot3D_x_k
-    idx_x_0 = 2;
+    idx_x_0 = x0Select;
     figure('Position',[0,0,9e2,1.3e3])
     sgtitle(['3D Scatter Plot of x_k with x_0 = [', ...
         num2str(reshape(X_0(:,idx_x_0),1,[])), ']^T'])
@@ -587,45 +632,180 @@ if scatterPlot3D_x_k
     zlabel('k')
 end
 
+%% 3D Scatter Plot of e_k for many A \in S
+if scatterPlot3D_e_k
+    idx_x_0 = x0Select;
+    figure('Position',[0,0,9e2,1.3e3])
+    sgtitle(['3D Scatter Plot of e_k with x_0 = [', ...
+        num2str(reshape(X_0(:,idx_x_0),1,[])), ']^T'])
+    
+    
+    E1 = zeros(N,size(ALPHA_real,2));
+    E2 = zeros(N,size(ALPHA_real,2));
+    K = zeros(N,size(ALPHA_real,2));
+    for k = 1:N
+        E1(k,:) = reshape(E_data(k, 1, idx_x_0, :, 1),1,[]);
+        E2(k,:) = reshape(E_data(k, 2, idx_x_0, :, 1),1,[]);
+        K(k,:) = k * ones(1,size(Alpha_real,2));
+    end
+    E1 = reshape(E1,1,[]);
+    E2 = reshape(E2,1,[]);
+    K = reshape(K,1,[]);
+    scatter3(E1,E2,K)
+    xlabel('e(1)')
+    ylabel('e(2)')
+    zlabel('k')
+    
+    hold on
+    
+    % Randmoly generated ones
+    E1 = zeros(N,m);
+    E2 = zeros(N,m);
+    K = zeros(N,m);
+    for k = 1:N
+        for i = 1:m
+            E1(k,i) = E_data(k, 1, idx_x_0, i, 1);
+            E2(k,i) = E_data(k, 2, idx_x_0, i, 1);
+            K(k,i) = k;
+        end
+    end
+    E1 = reshape(E1,1,[]);
+    E2 = reshape(E2,1,[]);
+    K = reshape(K,1,[]);
+    scatter3(E1,E2,K, 'r')
+    xlabel('e(1)')
+    ylabel('e(2)')
+    zlabel('k')
+end
 
 %% z_k statistic scatter plot
 if scatterPlot_z_k
     axes = [];
     figure('Position',[0,0,9e2,1.3e3])
-    sgtitle(['Scatter Plot of x_k at k = ', num2str(k)])
+    sgtitle('Scatter Plot of z_k = r_k^T \Sigma^{-1} r_k')
     % Only plots for x_k(1) and x_k(2)
     for idx_x_0 = 1:size(X_0,2)
-        K = zeros(N,size(ALPHA_real,2));
+        K_all = zeros(N,size(ALPHA_real,2));
         Z_all = zeros(N,size(ALPHA_real,2));
-        
+        K_i = zeros(N,m);
         Z_i = zeros(N,m);
         for k = 1:N
-            K(k,:) = k * ones(1,size(ALPHA_real,2));
+            K_all(k,:) = k * ones(1,size(ALPHA_real,2));
             Z_all(k,:) = reshape(Z_data(k, 1, idx_x_0, :, 1),1,[]);
             K_i(k,:) = k * ones(1,m);
             Z_i(k,:) = reshape(Z_data(k,1,idx_x_0,1:m,1),1,[]);
         end
-        K = reshape(K,1,[]);
+        K_all = reshape(K_all,1,[]);
         Z_all = reshape(Z_all,1,[]);
-        Z_i = reshape(Z_i,1,[]);
-        
-        % was working on getting this to work.......
-        
+%         K_i = reshape(K_i,1,[]);
+%         Z_i = reshape(Z_i,1,[]);
         
         ax = subplot(size(X_0,2),1,idx_x_0);
         axes = [axes, ax];
         hold on
         
         %Plots
-        scatter(K,Z_all)
-        scatter(K,Z_i, 'r')
+        scatter(K_all,Z_all, 'DisplayName', 'all')
+        for i = 1:m
+            scatter(K_i(:,i),Z_i(:,i), 'filled','DisplayName', ['i = ',num2str(i)])
+        end
         title(['x_0 = [', num2str(reshape(X_0(:,idx_x_0),1,[])), ']^T'])
-        xlabel('x(1)')
-        ylabel('x(2)')
+        legend()
+        xlabel('k')
+        ylabel('z_k')
+        set(gca, 'YScale', 'log') %log scale
+
     end
-    linkaxes(axes,'xy')
+    linkaxes(axes,'x')
 end
 
+%% 3D Scatter Plot of z_k vs \norm{A} overtime
+if scatterPlot3D_z_k
+    idx_x_0 = x0Select;
+    figure('Position',[0,0,9e2,1.3e3])
+    sgtitle(['3D Scatter Plot of z_k with x_0 = [', ...
+        num2str(reshape(X_0(:,idx_x_0),1,[])), ']^T'])
+    
+    
+    
+    E1 = zeros(N,size(ALPHA_real,2));
+    E2 = zeros(N,size(ALPHA_real,2));
+    K = zeros(N,size(ALPHA_real,2));
+    for k = 1:N
+        E1(k,:) = reshape(E_data(k, 1, idx_x_0, :, 1),1,[]);
+        E2(k,:) = reshape(E_data(k, 2, idx_x_0, :, 1),1,[]);
+        K(k,:) = k * ones(1,size(Alpha_real,2));
+    end
+    E1 = reshape(E1,1,[]);
+    E2 = reshape(E2,1,[]);
+    K = reshape(K,1,[]);
+    scatter3(E1,E2,K)
+    xlabel('e(1)')
+    ylabel('e(2)')
+    zlabel('k')
+    
+    hold on
+    
+    % Randmoly generated ones
+    E1 = zeros(N,m);
+    E2 = zeros(N,m);
+    K = zeros(N,m);
+    for k = 1:N
+        for i = 1:m
+            E1(k,i) = E_data(k, 1, idx_x_0, i, 1);
+            E2(k,i) = E_data(k, 2, idx_x_0, i, 1);
+            K(k,i) = k;
+        end
+    end
+    E1 = reshape(E1,1,[]);
+    E2 = reshape(E2,1,[]);
+    K = reshape(K,1,[]);
+    scatter3(E1,E2,K, 'r')
+    xlabel('e(1)')
+    ylabel('e(2)')
+    zlabel('k')
+end
+
+%% z_k_i statistic scatter plot
+if scatterPlot_z_k_i
+    axes = [];
+    figure('Position',[0,0,9e2,1.3e3])
+    sgtitle('Scatter Plot of z_k = r_k^T \Sigma^{-1} r_k')
+    % Only plots for x_k(1) and x_k(2)
+    for idx_x_0 = 1:size(X_0,2)
+        K_all = zeros(N,m*size(ALPHA_real,2));
+        Z_all = zeros(N,m*size(ALPHA_real,2));
+        K_i = zeros(N,m*m);
+        Z_i = zeros(N,m*m);
+        for k = 1:N
+            K_all(k,:) = k * ones(1,m*size(ALPHA_real,2));
+            Z_all(k,:) = reshape(Z_i_data(k, 1, idx_x_0, :, 1:m),1,[]);
+            K_i(k,:) = k * ones(1,m*m);
+            Z_i(k,:) = reshape(Z_i_data(k,1,idx_x_0,1:m,1:m),1,[]);
+        end
+        K_all = reshape(K_all,1,[]);
+        Z_all = reshape(Z_all,1,[]);
+%         K_i = reshape(K_i,1,[]);
+%         Z_i = reshape(Z_i,1,[]);
+        
+        ax = subplot(size(X_0,2),1,idx_x_0);
+        axes = [axes, ax];
+        hold on
+        
+        %Plots
+        scatter(K_all,Z_all, 'DisplayName', 'all')
+        for i = 1:(m*m)
+            scatter(K_i(:,i),Z_i(:,i), 'filled','DisplayName', ['i = ',num2str(i)])
+        end
+        title(['x_0 = [', num2str(reshape(X_0(:,idx_x_0),1,[])), ']^T'])
+        legend()
+        xlabel('k')
+        ylabel('z_k')
+        set(gca, 'YScale', 'log') %log scale
+
+    end
+    linkaxes(axes,'x')
+end
 
 %% Independent Sim
 if independentSim  
