@@ -123,31 +123,33 @@ where $Q \in \{Q \in \real^{n \cross n} \ | \ Q \succeq 0\}$, $X \in \real^{n \c
 and $L$ is calculated as $L = Q^{-1} X$.
 
 \section{Residual Bounding}
+\subsection{Residual Definition}
 The residual, $r_k$, is defined by
 \begin{equation}\label{eq:r_k_def}
     r_k := y_k - \hat{y}_k
 \end{equation}
-
 Additionally, we define associated residuals comparing the observer to each of the 
 individual subsystems, $r_k^{(i)}$, as
-\begin{equation}
+\begin{equation}\label{eq:r_k_i_def}
     r_k^{(i)} := y_k^{(i)} - \hat{y}_k
 \end{equation}
 
+\subsection{Test Statistic}
 A test statistic, $z_k$, is then defined as
 \begin{equation}\label{eq:z_k_def}
     z_k := r_k^T \Sigma^{-1} r_k
 \end{equation}
 where $\Sigma$ is designed to be the covariance matrix of the expected residual. 
 Similarly, the test statistic for each subsystem residuals is defined as
-\begin{equation}
+\begin{equation}\label{eq:z_k_i_def}
     z_k^{(i)} = (r_k^{(i)})^T \Sigma^{-1} r_k^{(i)}  
 \end{equation}
 A maximum test statisic, $z_k^*$, can then be calculated as
-\begin{equation}
+\begin{equation}\label{eq:z_k_max_def}
     z_k^* := \max_i z_k^{(i)}
 \end{equation}
 
+\subsection{Statistic Bounding}
 \begin{theorem}
     The actual system test statistic, $z_k$, is bounded from above by the maximum 
     test statistic for each of the other subsystem, $z_k^*$.
