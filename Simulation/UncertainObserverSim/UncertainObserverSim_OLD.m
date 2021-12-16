@@ -7,11 +7,11 @@ close all
 
 %% Sim Settings
 % Sim Parameters
-N = 10;
+N = 100;
 
 % Selection
 sysSelect = 4;
-alphaSelect = 1; %0 = single set, 1 = random alphas, 2 = random edge alphas
+alphaSelect = 2; %0 = single set, 1 = random alphas, 2 = random edge alphas
 x0Select = 2;
 
 testCtrb = false;
@@ -28,9 +28,9 @@ plotResidualStatistics = false;
 scatterPlot_x_k = false;
 scatterPlot3D_x_k = false;
 scatterPlot3D_e_k = false;
-scatterPlot_z_k = false;
+scatterPlot_z_k = true;
 scatterPlot3D_z_k = false;
-scatterPlot_z_k_i = true;
+scatterPlot_z_k_i = false;
 
 % Dependent Booleans
 if scatterPlot_z_k
@@ -180,7 +180,7 @@ X_hat_0 = X_0;
 % % Control Design: u = K * x_hat
 % tol = 1e-6;
 % cvx_clear
-% cvx_begin sdp
+% cvx_begin sdp quiet
 %     variable Q(p,n)
 %     variable P(n,n) symmetric
 %     maximize(trace(P))
@@ -447,44 +447,44 @@ if calculate_Z_k
 end
 
 %% Calcualte r_k_i
-if calculate_R_k_i
-    if exist('SigmaInv', 'var') ~= 1
-        SigmaInv = eye(q);
-    end
-    R_i_data = zeros(N, q, size(X_0,2), size(ALPHA_real,2), m);
-    for idx_x_0 = 1:size(X_0,2)
-        for idx_real = 1:size(ALPHA_real,2)
-            for idx_i = 1:m
-                for k = 1:N
-                    R_i_data(k, :, idx_x_0, idx_real,idx_i) = ...
-                        C*X_data(k,:,idx_x_0,idx_real,1) - ...
-                        C*X_hat_data(k,:,idx_x_0,idx_i,1);
-                end
-            end
-        end
-    end
-end
+% if calculate_R_k_i
+%     if exist('SigmaInv', 'var') ~= 1
+%         SigmaInv = eye(q);
+%     end
+%     R_i_data = zeros(N, q, size(X_0,2), size(ALPHA_real,2), m);
+%     for idx_x_0 = 1:size(X_0,2)
+%         for idx_real = 1:size(ALPHA_real,2)
+%             for idx_i = 1:m
+%                 for k = 1:N
+%                     R_i_data(k, :, idx_x_0, idx_real,idx_i) = ...
+%                         C*X_data(k,:,idx_x_0,idx_real,1)' - ...
+%                         C*X_hat_data(k,:,idx_x_0,idx_real,1)';
+%                 end
+%             end
+%         end
+%     end
+% end
+% 
 
 %% Calcualte Z_k_i Statistic
-if calculate_Z_k_i
-    if exist('SigmaInv', 'var') ~= 1
-        SigmaInv = eye(q);
-    end
-    Z_i_data = zeros(N, 1, size(X_0,2), size(ALPHA_real,2), m);
-    for idx_x_0 = 1:size(X_0,2)
-        for idx_real = 1:size(ALPHA_real,2)
-            for idx_m = 1:m
-                for k = 1:N
-                    Z_i_data(k, 1, idx_x_0, idx_real, idx_m) = ...
-                        R_i_data(k,:,idx_x_0,idx_real,idx_m) *...
-                        SigmaInv * ...
-                        R_i_data(k,:,idx_x_0,idx_real,idx_m)';
-                end
-            end
-        end
-    end
-end
-
+% if calculate_Z_k_i
+%     if exist('SigmaInv', 'var') ~= 1
+%         SigmaInv = eye(q);
+%     end
+%     Z_i_data = zeros(N, 1, size(X_0,2), size(ALPHA_real,2), m);
+%     for idx_x_0 = 1:size(X_0,2)
+%         for idx_real = 1:size(ALPHA_real,2)
+%             for idx_m = 1:m
+%                 for k = 1:N
+%                     Z_i_data(k, 1, idx_x_0, idx_real, idx_m) = ...
+%                         R_i_data(k,:,idx_x_0,idx_real,idx_m) *...
+%                         SigmaInv * ...
+%                         R_i_data(k,:,idx_x_0,idx_real,idx_m)';
+%                 end
+%             end
+%         end
+%     end
+% end
 
 %% All Residual Plot
 if plotAllResiduals
@@ -767,45 +767,45 @@ if scatterPlot3D_z_k
 end
 
 %% z_k_i statistic scatter plot
-if scatterPlot_z_k_i
-    axes = [];
-    figure('Position',[0,0,9e2,1.3e3])
-    sgtitle('Scatter Plot of z_k = r_k^T \Sigma^{-1} r_k')
-    % Only plots for x_k(1) and x_k(2)
-    for idx_x_0 = 1:size(X_0,2)
-        K_all = zeros(N,m*size(ALPHA_real,2));
-        Z_all = zeros(N,m*size(ALPHA_real,2));
-        K_i = zeros(N,m*m);
-        Z_i = zeros(N,m*m);
-        for k = 1:N
-            K_all(k,:) = k * ones(1,m*size(ALPHA_real,2));
-            Z_all(k,:) = reshape(Z_i_data(k, 1, idx_x_0, :, 1:m),1,[]);
-            K_i(k,:) = k * ones(1,m*m);
-            Z_i(k,:) = reshape(Z_i_data(k,1,idx_x_0,1:m,1:m),1,[]);
-        end
-        K_all = reshape(K_all,1,[]);
-        Z_all = reshape(Z_all,1,[]);
-%         K_i = reshape(K_i,1,[]);
-%         Z_i = reshape(Z_i,1,[]);
-        
-        ax = subplot(size(X_0,2),1,idx_x_0);
-        axes = [axes, ax];
-        hold on
-        
-        %Plots
-        scatter(K_all,Z_all, 'DisplayName', 'all')
-        for i = 1:(m*m)
-            scatter(K_i(:,i),Z_i(:,i), 'filled','DisplayName', ['i = ',num2str(i)])
-        end
-        title(['x_0 = [', num2str(reshape(X_0(:,idx_x_0),1,[])), ']^T'])
-        legend()
-        xlabel('k')
-        ylabel('z_k')
-        set(gca, 'YScale', 'log') %log scale
-
-    end
-    linkaxes(axes,'x')
-end
+% if scatterPlot_z_k_i
+%     axes = [];
+%     figure('Position',[0,0,9e2,1.3e3])
+%     sgtitle('Scatter Plot of z_k = r_k^T \Sigma^{-1} r_k')
+%     % Only plots for x_k(1) and x_k(2)
+%     for idx_x_0 = 1:size(X_0,2)
+%         K_all = zeros(N,m*size(ALPHA_real,2));
+%         Z_all = zeros(N,m*size(ALPHA_real,2));
+%         K_i = zeros(N,m*m);
+%         Z_i = zeros(N,m*m);
+%         for k = 1:N
+%             K_all(k,:) = k * ones(1,m*size(ALPHA_real,2));
+%             Z_all(k,:) = reshape(Z_i_data(k, 1, idx_x_0, :, 1:m),1,[]);
+%             K_i(k,:) = k * ones(1,m*m);
+%             Z_i(k,:) = reshape(Z_i_data(k,1,idx_x_0,1:m,1:m),1,[]);
+%         end
+%         K_all = reshape(K_all,1,[]);
+%         Z_all = reshape(Z_all,1,[]);
+% %         K_i = reshape(K_i,1,[]);
+% %         Z_i = reshape(Z_i,1,[]);
+%         
+%         ax = subplot(size(X_0,2),1,idx_x_0);
+%         axes = [axes, ax];
+%         hold on
+%         
+%         %Plots
+%         scatter(K_all,Z_all, 'DisplayName', 'all')
+%         for i = 1:m
+%             scatter(K_i(:,i),Z_i(:,i), 'filled','DisplayName', ['i = ',num2str(i)])
+%         end
+%         title(['x_0 = [', num2str(reshape(X_0(:,idx_x_0),1,[])), ']^T'])
+%         legend()
+%         xlabel('k')
+%         ylabel('z_k')
+%         set(gca, 'YScale', 'log') %log scale
+% 
+%     end
+%     linkaxes(axes,'x')
+% end
 
 %% Independent Sim
 if independentSim  
