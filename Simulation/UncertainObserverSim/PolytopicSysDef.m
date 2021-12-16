@@ -53,7 +53,7 @@ function [A,B,C,D] = PolytopicSysDef(sysSelect)
            -0.6485   -0.9483];
         C = [0.4745   -0.1475   -0.3936    0.0739;
             -0.6376   -0.8037    0.5602    0.5381];
-        D = 0;
+        D = zeros(2,2);
     end
 
 end
