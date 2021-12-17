@@ -1,0 +1,52 @@
+function M = DetectorStatCalcMatrix(results, sim_params)
+    
+    % DetectorStatCalcMatrix - Determines M_k for z_k prediction...
+    %results is the output for a PolytopicSysSim... needs the
+    %struct with sim_sys and sim_params fields...
+    
+%     % Parameters
+%     N = sim_params.N;
+%     SigmaInv = sim_params.SigmaInv;
+    
+    % System Values
+    sys_real = [results.sys_real]';
+    sys_hat = [results.sys_hat]';
+    L = results.L;
+    
+    M = arrayfun(@(sys_real,sys_hat) ...
+        DetectorStatCalcMatrixSingle(...
+            sys_real, sys_hat, L, sim_params),...
+        sys_real, sys_hat, 'UniformOutput', false);
+    
+    M = reshape(M,size(results));
+    
+    
+    
+    
+    
+    
+%     n = size(sys_real(1).A,1);
+    
+    
+    
+%     Z_k = cell(N,1);
+%     M = cell(numel(results),N);
+%     for idx_all = 1:numel(results)
+%         for k = 1:N
+%             M{idx_all,k} = zeros(n);
+%             A = sys_real(idx_all).A;
+%             A_hat = sys_hat(idx_all).A;
+%             C = sys_real(idx_all).C;
+%             C_hat = sys_hat(idx_all).C;
+%             L = results.L;
+%             for i = 0:(k-1)
+%                 for j = 0:(k-1)
+%                     M{idx_all,k} = M{idx_all,k} ...
+%                         + (A^(k-j))' * (A-A_hat)' * (A_hat - L*C_hat)^(j) ...
+%                             * (C' * SigmaInv * C)...
+%                             * ((A_hat - L*C_hat)^(i))' * (A - A_hat) * (A^(k-i));
+%                 end
+%             end
+%         end
+%     end
+end

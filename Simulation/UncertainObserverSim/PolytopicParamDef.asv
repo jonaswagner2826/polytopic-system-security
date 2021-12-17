@@ -9,8 +9,7 @@ function [ALPHA_real, ALPHA_hat] = PolytopicParamDef(alphaSelect, m)
         % Alpha_hat = [0,0,0,1];%[0.375, 0.125, 0.125, 0.125];
 %         ALPHA_hat = [0.999,0.001,0,0];
         
-        ALPHA_real = eye(m,1);
-        ALPHA_hat = (1/m).*ones(m,1);
+        ALPHA_real = eye(;
         
         
     elseif alphaSelect == 1

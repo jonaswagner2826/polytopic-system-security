@@ -26,6 +26,9 @@ function sys_all = PolytopicSysCalc(sys_poly, alpha_all)
         sys_all{i}.D = PolytopicSysMatrixCalc(M{4}, alpha_all(:,i));
     end
     
+    % Account for single Alphas
+    if size(alpha_all,2)==1, sys_all = sys_all{:,1}; end
+    
 %         
 %     
 %     
