@@ -43,6 +43,7 @@ function [sim_results] = PolytopicSysSimSingle(sys, sim_params)
     %Standard
     N = sim_params.N;
     u_k = @(x) sim_params.u_k(x, K); %updated to be just of x
+    SigmaInv = sim_params.SigmaInv;
     
     
     
@@ -57,6 +58,7 @@ function [sim_results] = PolytopicSysSimSingle(sys, sim_params)
     sim_results.U = zeros(p,N);
     sim_results.Y = zeros(q,N);
     sim_results.Y_hat = zeros(q,N);
+    sim_results.Z = zeros(1,N);
     
     % k = 0
     x = x_0;
@@ -88,11 +90,14 @@ function [sim_results] = PolytopicSysSimSingle(sys, sim_params)
         sim_results.X_hat(:,k) = x_hat;
         sim_results.U(:,k) = u;
         sim_results.Y(:,k) = y;
-        sim_results.Y_hat(:,k) = y_hat;        
+        sim_results.Y_hat(:,k) = y_hat;
+        sim_results.Z(:,k) = (y-y_hat)'*SigmaInv*(y-y_hat);
     end
     
     % Additional Calc
     sim_results.E = sim_results.X - sim_results.X_hat;
     sim_results.R = sim_results.Y - sim_results.Y_hat;
+%     sim_results.Z = ...
+%         sim_results.R.' * SigmaInv * sim_results.R;
 end
 

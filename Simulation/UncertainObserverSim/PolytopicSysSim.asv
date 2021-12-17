@@ -154,28 +154,26 @@
 %     Y_data = 
     
 function results = PolytopicSysSim(...
-        A_all, C_all, L, alpha_real_all, alpha_hat_all, X_0, ...
-        X_hat_0, N, B_all, D_all, K, U_0, u_k, SigmaInv...
+        A_all, L, alpha_real_all, alpha_hat_all, X_0, ...
+        X_hat_0, N, B_all, C_all, D_all, K, U_0, u_k...
         )
     arguments
-        A_all (:,:,:) double % Plant Sys Matrix
-        C_all (:,:,:) double % Plant Output Matrix
+        A_all (:,:,:) double % Plan Sys Matrix
         L (:,:) double % Observer Gain Matrix
         alpha_real_all (:,:) double % Plant Sys Params
         alpha_hat_all (:,:) double% Observer Sys Params
         X_0 (:,:,:) double% Plant Sys ICs
     % Optional Parameters
-        X_hat_0 (:,:,:) double = X_0 % Observer ICs (assume X_0 => E_0 = 0)
+        X_hat_0 (:,1) double = X_0 % Observer ICs (assume X_0 => E_0 = 0)
         N (1,1) uint16 = 100 % Num simu steps
         B_all (:,:,:) double = zeros(size(A_all,1),1) % B matrix (assume zeros(n,p=1))
-        D_all (:,:,:) double = zeros(size(C_all,1),size(B_all,2)) % D matrix (assume zeros(q,n))
+        C_all (:,:,:) double = eye(size(A_all,1)) % C matrix (assume eye(n))
+        D_all (:,:,:) double = zeros(size(C_all,1),size(A_all,1)) % D matrix (assume zeros(q,n))
         K (:,:) double = zeros(size(B_all,2),size(A_all,1)) % K matrix (assume zeros(p,n))
         U_0 (:,:,:) double = zeros(size(B_all,2)) % Initial u_0 value... assume 0
         u_k function_handle = @(x,K) K * x % u(x) = K * x
-        SigmaInv (:,:) = eye(size(C_all,1));
     end     
     %% Input Processing
-    % System Matrices
     sys_poly = struct( ...
         'A', A_all, ...
         'B', B_all, ...
@@ -184,11 +182,12 @@ function results = PolytopicSysSim(...
         );
     K_all = {K};
     L_all = {L};
+    
     % Initial Conditions
     X_0_all = num2cell(X_0,1);
     X_hat_0_all = num2cell(X_hat_0,1);
     U_0_all = num2cell(U_0,1);
-    % Polytopic Sys Calculations
+    % Polytopic S
     sys_real_all = PolytopicSysCalc(sys_poly, alpha_real_all);
     real_all = struct(  'alpha', num2cell(alpha_real_all,1),...
                         'sys', sys_real_all);
@@ -218,8 +217,7 @@ function results = PolytopicSysSim(...
     
     %% Simulation Paramteres
     sim_params.N = N;
-    sim_params.u_k = u_k;
-    sim_params.SigmaInv = SigmaInv;
+    sim_params.u_k = @u_k;
     
     %% Simulate System
     sim_results = arrayfun(...
