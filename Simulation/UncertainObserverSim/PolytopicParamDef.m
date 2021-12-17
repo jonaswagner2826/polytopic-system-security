@@ -12,7 +12,7 @@ function [ALPHA_real, ALPHA_hat] = PolytopicParamDef(alphaSelect, m)
     elseif alphaSelect == 1
         %Random Alphas
         num_extra_alpha_real = 500;
-        num_extra_alpha_hat = 0;
+        num_extra_alpha_hat = 3;
         ALPHA_real = [eye(m), normalize(ones(m,1),1,'norm',1),...
             normalize(rand(m, num_extra_alpha_real),1,'norm',1)];
         ALPHA_hat = [(1/m)*ones(m,1),...[eye(m), [0.25;0.25;0.25;0.25],...
@@ -23,7 +23,7 @@ function [ALPHA_real, ALPHA_hat] = PolytopicParamDef(alphaSelect, m)
         num_extra_alpha_real = 5; % per subsys edge
         num_extra_alpha_hat = 0;
         ALPHA_real = [eye(m), (1/m) * ones(m,1)];
-        ALPHA_hat = [(1/m) * ones(m,1)]; %eye(m)
+        ALPHA_hat = [(1/m) * ones(m,1), eye(m)]; %
         
         for idx = nchoosek(1:m,2)'
             for k = 1:num_extra_alpha_real
