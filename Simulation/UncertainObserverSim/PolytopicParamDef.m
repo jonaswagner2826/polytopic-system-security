@@ -11,7 +11,7 @@ function [ALPHA_real, ALPHA_hat] = PolytopicParamDef(alphaSelect, m)
         
     elseif alphaSelect == 1
         %Random Alphas
-        num_extra_alpha_real = 500;
+        num_extra_alpha_real = 0;%500;
         num_extra_alpha_hat = 3;
         ALPHA_real = [eye(m), normalize(ones(m,1),1,'norm',1),...
             normalize(rand(m, num_extra_alpha_real),1,'norm',1)];
