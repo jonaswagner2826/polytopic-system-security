@@ -1,0 +1,146 @@
+\section{Constrained Zonotopes}
+\subsection{Basic Definition}
+\begin{definition}
+    $Z \subset \R^n$ is \emph{\textbf{Constrained Zonotope}} if \begin{equation}\label{eq:const_zonotope_def}
+        \exists (\vb{G}, \vb{c}, \vb{A}, \vb{b}) 
+            \in \R^{n \cross n_g} \cross \R^{n} \cross \R^{n_c \cross n_g} \cross \R^{n_c} 
+        \st Z = \qty{
+            \vb{G} \vb{\xi} + \vb{c} 
+            \st \norm{\vb{\xi}}_\infty \leq 1 
+                \land \vb{A} \vb{\xi} = \vb{b}
+        }
+    \end{equation}
+\end{definition}
+
+\textbf{Notes:}
+\begin{itemize}
+    \item $Z$ defined by \eqref{eq:const_zonotope_def} can be denoted by $Z = \{\vb{G}, \vb{c}, \vb{A}, \vb{b}\}$.
+    \item $Z = \{\vb{G}, \vb{c}, \vb{A}, \vb{b}\}$ is known as a \emph{\textbf{constrained generator representation}} (CG-rep).
+\end{itemize}
+
+\textbf{Properties:}
+\begin{enumerate}
+    \item Constrained Zonotopes are affine image of a constrained unit hypercube $B_{\infty}(\vb{A},\vb{b}) \equiv \{\xi \in B_\infty \st \vb{A} \vb{\xi} \st \vb{A} \vb{\xi} = \vb{b}\}$.
+\end{enumerate}
+
+\subsection{Basic Operations:}
+Let $Z = \{\vb{G}_z, \vb{c}_z, \vb{A}_z, \vb{b}_z\} \subset \R^n$, 
+$W = \{\vb{G}_w, \vb{c}_w, \vb{A}_w, \vb{b}_q\} \subset \R^n$, 
+$Y = \{\vb{G}_y, \vb{c}_y, \vb{A}_y, \vb{b}_y\} \subset \R^k$, 
+and $\vb{R} \in \R^{k \cross n}$.
+
+\textbf{Linear Mapping:}
+\begin{equation}
+    \vb{R} Z = \qty{
+        \vb{R} \vb{G}_z, 
+        \vb{R} \vb{c}_z, 
+        \vb{A}_{z}, 
+        \vb{b}_z
+    }
+\end{equation}
+
+\textbf{Minkowski Sum:}
+\begin{equation}
+    Z + W    = \qty{
+        \mqty[\vb{G}_z & \vb{G}_w], 
+        \vb{c}_z + \vb{c}_w, 
+        \mqty[
+            \vb{A}_z & \vb{0}\\
+            \vb{0}   &\vb{A}_w
+        ],
+        \mqty[
+            \vb{b}_z\\
+            \vb{b}_w
+        ]
+    }
+\end{equation}
+
+\textbf{Generalized Intersection:}
+\begin{equation}
+    Z \cap_{\vb{R}} Y = \qty{
+        \mqty[\vb{G}_z & \vb{0}],
+        \vb{c}_z,
+        \mqty[
+            \vb{A}_z &\vb{0}\\
+            \vb{0} &\vb{A}_y\\
+            \vb{R} \vb{G}_z &-\vb{G}_y
+        ],
+        \mqty[
+            \vb{b}_z\\
+            \vb{b}_y\\
+            \vb{c}_y - \vb{R} \vb{c}_z
+        ]
+    }
+\end{equation}
+
+\subsection{Relationship to Convex Polytope}
+$Z \subset \R^n$ is a constrained zonotope iff it is a convex polytope.
+(i.e.) $\forall_{Z \subset \R^n}$ \[
+     Z \text{ constrained polytope } \iff Z \text{ convex polytope}
+\] or equivalently $\forall_{Z = P \subset \R^n}$ \[
+    \exists \qty(\vb{G}, \vb{c}, \vb{A}, \vb{b}) \st Z = \{\vb{G}, \vb{c}, \vb{A}, \vb{b}\}
+    \iff \exists \qty(\vb{H}, \vb{k}) \st P = \{\vb{H}, \vb{k}\}
+\]
+
+\subsection{Complexity Reduction}
+\subsubsection{Rescaling Constrained Zonotopes}
+Let $Z = \{\vb{G}, \vb{c}, \vb{A}, \vb{b}\}$.
+For $\xi^{L}, \xi^{U} \in \R^n \st B_\infty(\vb{A},\vb{b}) \subset [\xi^{L},\xi^{U}] \subset [-\vb{1}, \vb{1}]$, there is an equivelent CG-rep as \begin{equation}
+    Z = \qty{
+        \vb{G} \text{diag}(\vb{\xi}_r), 
+        \vb{c} + \vb{G} \vb{\xi}_m,
+        \vb{A} \text{diag}(\vb{\xi}_r),
+        \vb{b} - \vb{A} \vb{\xi}_m
+    }
+\end{equation}
+with $\vb{\xi}_m = \frac{1}{2} (\vb{\xi}^{U} + \vb{\xi}^{L})$ and $\vb{\xi}_r = \frac{1}{2} (\vb{\xi}^{U} - \vb{\xi}^{L})$.
+
+\textbf{Notes:}
+\begin{itemize}
+    \item Best interval is just solving for an LP ($\min$ or $\max$ satisfying the equivelency and $\infty$-norm ball ineqality) but it's cheaper to do a different method...
+\end{itemize}
+
+
+\subsubsection{Constraint Reduction}
+Let $Z = \{\vb{G}, \vb{c}, \vb{A}, \vb{b}\}$.
+A reduced constraint set $\tilde{Z}$ with $Z \subset \tilde{Z}$ exists $\forall \Lambda_G \in \R^{n \cross n_c}, \Lambda_A \in \R^{n_c \cross n_c}$ defined by \begin{equation}
+    \tilde{Z} = \qty{
+        \vb{G} - \Lambda_G \vb{A}, 
+        \vb{c} + \Lambda_G \vb{b},
+        \vb{A} - \Lambda_A \vb{A},
+        \vb{b} - \Lambda_A \vb{b}
+    }
+\end{equation}
+
+\textbf{Eliminate single constraints}
+A single constraint equation is given by \begin{equation}
+    \xi_j = a_{1j}^{-1} b_j - a_{1j}^{-1} \sum_{k \neq j} a_{1k} \xi_k
+\end{equation} with the entire form as \[
+    \vb{z} = \vb{G} \vb{\xi} + \vb{c}
+\]
+
+To eliminate the $j$-th constraint we construct $\Lambda_G$ and $\lambda_A$ as \begin{equation}
+    \Lambda_G \equiv \vb{G} \vb{E}_{j1} a_{1j}^{-1}, 
+    \quad
+    \Lambda_A \equiv \vb{A} \vb{E}_{j1} a_{1j}^{-1}
+\end{equation}
+using $\vb{E}_{j1} \in \R^{n_g \cross n_c}$ with all zero except for a 1 in $(j,1)$.
+
+This results in \[
+    \tilde{Z} = \qty{
+        \vb{G} - \Lambda_G \vb{A}, 
+        \vb{c} + \Lambda_G \vb{b},
+        \vb{A} - \Lambda_A \vb{A},
+        \vb{b} - \Lambda_A \vb{b}
+    } = \qty{
+        \tilde{\vb{G}},
+        \tilde{\vb{c}},
+        \tilde{\vb{A}},
+        \tilde{\vb{b}}
+    }
+\]
+
+
+We can eliminate the 
+
+
