@@ -16,11 +16,11 @@ function M = DetectorStatCalcMatrixSingle(sys_real,sys_hat, L, sim_params)
     M = cell(N,1);
     for k = 1:N
         M{k} = zeros(size(A,1));
-        for i = (1:k)-1
-            for j = (1:k)-1
+        for i = 0:k
+            for j = 0:k
                 M{k} = M{k} ...
                     + (A^(k-j))' * (A - A_hat)' * (A_hat - L*C_hat)^(j) ...
-                        * (C' * SigmaInv * C)...
+                        * (C' * SigmaInv * C) ...
                         * ((A_hat - L*C_hat)^(i))' * (A-A_hat) * (A^(k-i));
             end
         end
